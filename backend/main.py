@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.routes.insights import router as insights_router
 from backend.routes.metrics import router as metrics_router
+from backend.routes.actions import router as actions_router
 
 app = FastAPI(
     title="CloudLeaf AI API",
@@ -27,6 +28,7 @@ app.add_middleware(
 # Register routes with /api prefix
 app.include_router(insights_router, prefix="/api")
 app.include_router(metrics_router, prefix="/api")
+app.include_router(actions_router, prefix="/api")
 
 
 @app.get("/")

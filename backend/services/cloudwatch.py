@@ -18,9 +18,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Client instances
-ec2_client = boto3.client("ec2")
-cloudwatch_client = boto3.client("cloudwatch")
+AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
 
+ec2_client = boto3.client("ec2", region_name=AWS_REGION)
+cloudwatch_client = boto3.client("cloudwatch", region_name=AWS_REGION)
 # Hardcoded tag lookups for demo workloads
 DEMO_TAGS: dict[str, dict[str, Any]] = {
     "i-0403e5fb9f4f59d0e": {"env": "dev", "critical": False},
