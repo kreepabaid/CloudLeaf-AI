@@ -15,27 +15,76 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
+import os
 
+import boto3
+from botocore.exceptions import ClientError
+from dotenv import load_dotenv
+load_dotenv()
+
+AWS_REGION = os.getenv("AWS_REGION")
+INSTANCE_ID = os.getenv("EC2_INSTANCE_ID")
+
+ec2 = boto3.client(
+    "ec2",
+    region_name=AWS_REGION,
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+)
 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
 def stop_instance(instance_id: str) -> dict[str, Any]:
-    """Simulate stopping / terminating an EC2 instance.
+    """Stop a real EC2 instance."""
 
-    Args:
-        instance_id: The AWS instance ID to stop.
+    try:
+        response = ec2.stop_instances(
+            InstanceIds=[instance_id]
+        )
 
-    Returns:
-        A structured result dict.
-    """
-    return _build_result(
-        action="stop",
-        instance_id=instance_id,
-        detail=f"Instance {instance_id} has been stopped (simulated)."
-    )
+        state = response["StoppingInstances"][0]["CurrentState"]["Name"]
 
+        return _build_result(
+            action="stop",
+            instance_id=instance_id,
+            detail=f"EC2 instance {instance_id} is now {state}."
+        )
+
+    except ClientError as e:
+        return {
+            "status": "error",
+            "action": "stop",
+            "instance_id": instance_id,
+            "detail": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+def start_instance(instance_id: str) -> dict[str, Any]:
+    """Start a real EC2 instance."""
+
+    try:
+        response = ec2.start_instances(
+            InstanceIds=[instance_id]
+        )
+
+        state = response["StartingInstances"][0]["CurrentState"]["Name"]
+
+        return _build_result(
+            action="start",
+            instance_id=instance_id,
+            detail=f"EC2 instance {instance_id} is now {state}."
+        )
+
+    except ClientError as e:
+        return {
+            "status": "error",
+            "action": "start",
+            "instance_id": instance_id,
+            "detail": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
 
 def resize_instance(instance_id: str, new_type: str) -> dict[str, Any]:
     """Simulate resizing an EC2 instance to a smaller type.

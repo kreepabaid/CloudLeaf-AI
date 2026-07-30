@@ -31,9 +31,13 @@ from backend.ai.validator import (
     DECISION_AUTO_APPROVE,
     DECISION_NEEDS_APPROVAL,
 )
-from backend.automation.automation import stop_instance, resize_instance, no_action
 
-
+from backend.automation.automation import (
+    stop_instance,
+    start_instance,
+    resize_instance,
+    no_action,
+)
 # ---------------------------------------------------------------------------
 # Lambda entry point
 # ---------------------------------------------------------------------------
