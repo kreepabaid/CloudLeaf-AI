@@ -1,62 +1,74 @@
 [
   {
-    "id": "insight-001",
+    "_note": "The tags field is temporarily included because the validator requires it even though the original insight schema does not.",
+    "insight_id": "INS-001",
+    "instance_id": "i-0403e5fb9f4f59d0e",
     "type": "idle",
-    "instance_id": "i-0a12b34c56dev",
-    "region": "us-east-1",
-    "tags": { "env": "dev", "critical": false },
-    "cpu_avg_7d": 1.2,
-    "recommendation": "Shut down idle dev instance to save costs.",
-    "target_instance_type": null,
-    "confidence": 98,
-    "estimated_savings_usd": 420.00
+    "metric_summary": {
+      "cpu_avg": 3.2,
+      "network_in_bytes": 10240
+    },
+    "recommendation": "Stop the instance to reduce idle costs.",
+    "estimated_savings_usd": 48.75,
+    "risk_level": "low",
+    "requires_approval": false,
+    "tags": {
+      "env": "dev",
+      "critical": false
+    }
   },
   {
-    "id": "insight-002",
+    "_note": "The tags field is temporarily included because the validator requires it even though the original insight schema does not.",
+    "insight_id": "INS-002",
+    "instance_id": "i-0123456789abcdef0",
+    "type": "over_provisioned",
+    "metric_summary": {
+      "cpu_avg": 32,
+      "network_in_bytes": 825000
+    },
+    "recommendation": "Resize the instance to a smaller type.",
+    "estimated_savings_usd": 121.60,
+    "risk_level": "medium",
+    "requires_approval": true,
+    "tags": {
+      "env": "prod",
+      "critical": false
+    }
+  },
+  {
+    "_note": "The tags field is temporarily included because the validator requires it even though the original insight schema does not.",
+    "insight_id": "INS-003",
+    "instance_id": "i-0abcdef1234567890",
     "type": "idle",
-    "instance_id": "i-0a12b34c56prod",
-    "region": "us-east-1",
-    "tags": { "env": "prod", "critical": false },
-    "cpu_avg_7d": 3.5,
-    "recommendation": "Shut down idle production instance — requires manual approval.",
-    "target_instance_type": null,
-    "confidence": 95,
-    "estimated_savings_usd": 680.00
+    "metric_summary": {
+      "cpu_avg": 15.5,
+      "network_in_bytes": 215000
+    },
+    "recommendation": "Stop the instance.",
+    "estimated_savings_usd": 92.10,
+    "risk_level": "high",
+    "requires_approval": true,
+    "tags": {
+      "env": "prod",
+      "critical": true
+    }
   },
   {
-    "id": "insight-003",
-    "type": "idle",
-    "instance_id": "i-critical789",
-    "region": "eu-west-1",
-    "tags": { "env": "prod", "critical": true },
-    "cpu_avg_7d": 5.0,
-    "recommendation": "Instance is idle but marked critical — do not touch.",
-    "target_instance_type": null,
-    "confidence": 99,
-    "estimated_savings_usd": 900.00
-  },
-  {
-    "id": "insight-004",
-    "type": "over-provisioned",
-    "instance_id": "i-highcpu456",
-    "region": "us-west-2",
-    "tags": { "env": "dev", "critical": false },
-    "cpu_avg_7d": 85.0,
-    "recommendation": "Instance CPU is high — no action recommended.",
-    "target_instance_type": "t3.medium",
-    "confidence": 72,
-    "estimated_savings_usd": 150.00
-  },
-  {
-    "id": "insight-005",
-    "type": "over-provisioned",
-    "instance_id": "i-resize789",
-    "region": "ap-southeast-1",
-    "tags": { "env": "dev", "critical": false },
-    "cpu_avg_7d": 22.0,
-    "recommendation": "Right-size from m5.4xlarge to m5.xlarge.",
-    "target_instance_type": "m5.xlarge",
-    "confidence": 92,
-    "estimated_savings_usd": 310.00
+    "_note": "The tags field is temporarily included because the validator requires it even though the original insight schema does not.",
+    "insight_id": "INS-004",
+    "instance_id": "i-0fedcba9876543210",
+    "type": "ambiguous",
+    "metric_summary": {
+      "cpu_avg": 18.7,
+      "network_in_bytes": 318400
+    },
+    "recommendation": "Collect additional metrics before taking action.",
+    "estimated_savings_usd": 24.90,
+    "risk_level": "low",
+    "requires_approval": true,
+    "tags": {
+      "env": "dev",
+      "critical": false
+    }
   }
 ]

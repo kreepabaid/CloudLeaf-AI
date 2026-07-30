@@ -40,7 +40,8 @@ def validate_insight(insight: dict[str, Any]) -> dict[str, str]:
           - "reason":   human-readable explanation
     """
     tags = insight.get("tags", {})
-    cpu_avg = insight.get("cpu_avg_7d", 0)
+    metric_summary = insight.get("metric_summary", {})
+    cpu_avg = metric_summary.get("cpu_avg", 0)
 
     # Rule 1 — Critical workloads are never auto-actioned
     if tags.get("critical", False):

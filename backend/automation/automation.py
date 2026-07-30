@@ -25,6 +25,14 @@ load_dotenv()
 AWS_REGION = os.getenv("AWS_REGION")
 INSTANCE_ID = os.getenv("EC2_INSTANCE_ID")
 
+def _get_ec2_client():
+    return boto3.client(
+        "ec2",
+        region_name=AWS_REGION,
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    )
+
 ec2 = boto3.client(
     "ec2",
     region_name=AWS_REGION,
@@ -36,28 +44,27 @@ ec2 = boto3.client(
 # Public API
 # ---------------------------------------------------------------------------
 
-def stop_instance(instance_id: str) -> dict[str, Any]:
+def stop_instance(instance_id: str, ec2_client=None) -> dict[str, Any]:
     """Stop a real EC2 instance."""
-
+    if ec2_client is None:
+        ec2_client = _get_ec2_client()
     try:
-        response = ec2.stop_instances(
+        response = ec2_client.stop_instances(
             InstanceIds=[instance_id]
         )
 
         state = response["StoppingInstances"][0]["CurrentState"]["Name"]
 
-        return _build_result(
-            action="stop",
-            instance_id=instance_id,
-            detail=f"EC2 instance {instance_id} is now {state}."
-        )
+        return {
+            "success": True,
+            "message": f"EC2 instance {instance_id} is now {state}.",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
 
     except ClientError as e:
         return {
-            "status": "error",
-            "action": "stop",
-            "instance_id": instance_id,
-            "detail": str(e),
+            "success": False,
+            "message": str(e),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -86,22 +93,48 @@ def start_instance(instance_id: str) -> dict[str, Any]:
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
-def resize_instance(instance_id: str, new_type: str) -> dict[str, Any]:
-    """Simulate resizing an EC2 instance to a smaller type.
-
-    Args:
-        instance_id: The AWS instance ID to resize.
-        new_type:    The target instance type (e.g. "t3.medium").
-
-    Returns:
-        A structured result dict.
+def resize_instance(instance_id: str, target_type: str, ec2_client=None) -> dict[str, Any]:
     """
-    return _build_result(
-        action="resize",
-        instance_id=instance_id,
-        detail=f"Instance {instance_id} resized to {new_type} (simulated).",
-        new_type=new_type
-    )
+    Resize an EC2 instance.
+
+    The instance is stopped, waited on until fully stopped,
+    resized, and intentionally left stopped.
+    Restarting is a separate manual step.
+    """
+
+    if ec2_client is None:
+        ec2_client = _get_ec2_client()
+
+    try:
+        # Step 1: Stop the instance
+        ec2_client.stop_instances(InstanceIds=[instance_id])
+
+        # Step 2: Wait until it is stopped
+        waiter = ec2_client.get_waiter("instance_stopped")
+        waiter.wait(InstanceIds=[instance_id])
+
+        # Step 3: Change instance type
+        ec2_client.modify_instance_attribute(
+            InstanceId=instance_id,
+            InstanceType={"Value": target_type},
+        )
+
+        # NOTE:
+        # We intentionally DO NOT restart the instance here.
+        # Restarting is a separate manual approval step.
+
+        return {
+            "success": True,
+            "message": f"Instance {instance_id} resized to {target_type} and left stopped.",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    except ClientError as e:
+        return {
+            "success": False,
+            "message": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
 
 
 def no_action(instance_id: str) -> dict[str, Any]:

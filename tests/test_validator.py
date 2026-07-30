@@ -29,16 +29,21 @@ from backend.ai.validator import (
 def _make_insight(**overrides):
     """Build a minimal valid insight dict, applying any overrides."""
     base = {
-        "id": "test-001",
-        "type": "idle",
+        "insight_id": "INS-001",
         "instance_id": "i-test123",
-        "region": "us-east-1",
-        "tags": {"env": "dev", "critical": False},
-        "cpu_avg_7d": 5.0,
+        "type": "idle",
+        "metric_summary": {
+            "cpu_avg": 5.0,
+            "network_in_bytes": 10000
+        },
         "recommendation": "Stop instance",
-        "target_instance_type": None,
-        "confidence": 95,
         "estimated_savings_usd": 100.0,
+        "risk_level": "low",
+        "requires_approval": False,
+        "tags": {
+            "env": "dev",
+            "critical": False
+        }
     }
     base.update(overrides)
     return base
@@ -72,14 +77,24 @@ class TestValidatorHighCPU:
     """Rule 3: instances above 70% CPU must be rejected."""
 
     def test_high_cpu_is_rejected(self):
-        insight = _make_insight(cpu_avg_7d=85.0)
+        insight = _make_insight(
+            metric_summary={
+                "cpu_avg": 85.0,
+                "network_in_bytes": 10000
+            }
+        )
         result = validate_insight(insight)
         assert result["decision"] == DECISION_REJECTED
         assert "cpu" in result["reason"].lower()
 
     def test_boundary_cpu_70_is_not_rejected(self):
         """Exactly 70% should NOT be rejected (threshold is >70)."""
-        insight = _make_insight(cpu_avg_7d=70.0)
+        insight = _make_insight(
+            metric_summary={
+                "cpu_avg": 70.0,
+                "network_in_bytes": 10000
+            }
+        )
         result = validate_insight(insight)
         assert result["decision"] == DECISION_AUTO_APPROVE
 

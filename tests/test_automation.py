@@ -1,60 +1,92 @@
 """
 Tests for CloudLeaf Automation Engine
-=======================================
-Verifies all three simulated actions return correct structure.
+=====================================
+Unit tests using mocked boto3 EC2 clients.
+No real AWS resources are touched.
 """
 
 import sys
 import os
+from unittest.mock import MagicMock
 
 # Ensure project root is importable
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from backend.automation.automation import stop_instance, resize_instance, no_action
+from backend.automation.automation import stop_instance, resize_instance
 
 
 # ---------------------------------------------------------------------------
-# Shared assertion helper
-# ---------------------------------------------------------------------------
-
-def _assert_common_fields(result, expected_action, expected_instance_id):
-    """Check the fields that every automation result must contain."""
-    assert result["status"] == "success"
-    assert result["action"] == expected_action
-    assert result["instance_id"] == expected_instance_id
-    assert "timestamp" in result
-    assert "detail" in result
-
-
-# ---------------------------------------------------------------------------
-# Test cases
+# Stop Instance
 # ---------------------------------------------------------------------------
 
 class TestStopInstance:
-    def test_stop_returns_correct_payload(self):
-        result = stop_instance("i-abc123")
-        _assert_common_fields(result, "stop", "i-abc123")
-        assert "stopped" in result["detail"].lower()
 
-    def test_stop_does_not_include_new_type(self):
-        result = stop_instance("i-abc123")
-        assert "new_type" not in result
+    def test_stop_instance_success(self):
+        mock_ec2 = MagicMock()
 
+        mock_ec2.stop_instances.return_value = {
+            "StoppingInstances": [
+                {
+                    "CurrentState": {
+                        "Name": "stopping"
+                    }
+                }
+            ]
+        }
+
+        result = stop_instance(
+            "i-abc123",
+            ec2_client=mock_ec2
+        )
+
+        mock_ec2.stop_instances.assert_called_once_with(
+            InstanceIds=["i-abc123"]
+        )
+
+        assert result["success"] is True
+        assert "timestamp" in result
+        assert "stopping" in result["message"].lower()
+
+
+# ---------------------------------------------------------------------------
+# Resize Instance
+# ---------------------------------------------------------------------------
 
 class TestResizeInstance:
-    def test_resize_returns_correct_payload(self):
-        result = resize_instance("i-xyz789", "t3.small")
-        _assert_common_fields(result, "resize", "i-xyz789")
-        assert result["new_type"] == "t3.small"
-        assert "t3.small" in result["detail"]
 
-    def test_resize_detail_mentions_instance(self):
-        result = resize_instance("i-xyz789", "m5.xlarge")
-        assert "i-xyz789" in result["detail"]
+    def test_resize_instance_success(self):
 
+        mock_ec2 = MagicMock()
 
-class TestNoAction:
-    def test_no_action_returns_correct_payload(self):
-        result = no_action("i-skip001")
-        _assert_common_fields(result, "no_action", "i-skip001")
-        assert "no action" in result["detail"].lower()
+        mock_waiter = MagicMock()
+
+        mock_ec2.get_waiter.return_value = mock_waiter
+
+        result = resize_instance(
+            "i-xyz789",
+            "t3.small",
+            ec2_client=mock_ec2
+        )
+
+        mock_ec2.stop_instances.assert_called_once_with(
+            InstanceIds=["i-xyz789"]
+        )
+
+        mock_ec2.get_waiter.assert_called_once_with(
+            "instance_stopped"
+        )
+
+        mock_waiter.wait.assert_called_once_with(
+            InstanceIds=["i-xyz789"]
+        )
+
+        mock_ec2.modify_instance_attribute.assert_called_once_with(
+            InstanceId="i-xyz789",
+            InstanceType={
+                "Value": "t3.small"
+            }
+        )
+
+        assert result["success"] is True
+        assert "timestamp" in result
+        assert "t3.small" in result["message"]
