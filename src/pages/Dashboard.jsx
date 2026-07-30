@@ -1,160 +1,420 @@
-import React from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { forecastData } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { 
+  Leaf, 
+  DollarSign, 
+  CheckCircle2, 
+  Zap, 
+  TrendingUp, 
+  Cpu, 
+  HardDrive, 
+  Activity, 
+  Layers, 
+  Sparkles,
+  Calculator,
+  ArrowRight,
+  Info
+} from 'lucide-react';
+import { 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  CartesianGrid, 
+  BarChart, 
+  Bar, 
+  Legend 
+} from 'recharts';
+import MetricCard from '../components/MetricCard';
+import ShimmerSkeleton from '../components/ShimmerSkeleton';
+import { 
+  mockStats, 
+  forecastData, 
+  historicalTrendsData, 
+  carbonBreakdownData 
+} from '../data/mockData';
 
 export default function Dashboard() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [forecastTab, setForecastTab] = useState('cost'); // 'cost' | 'cpu' | 'memory' | 'traffic'
+
+  useEffect(() => {
+    // Initial mount loading shimmer simulation
+    const timer = setTimeout(() => setIsLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Map forecast tab configuration
+  const forecastConfigs = {
+    cost: {
+      title: 'Cloud Cost Projection ($/day)',
+      dataKeyKey: 'cost',
+      baselineKey: 'baselineCost',
+      color: '#005237',
+      unit: '$',
+      icon: DollarSign,
+    },
+    cpu: {
+      title: 'Average Fleet CPU Utilization (%)',
+      dataKeyKey: 'cpu',
+      color: '#1f6b4d',
+      unit: '%',
+      icon: Cpu,
+    },
+    memory: {
+      title: 'Average Memory Allocation (%)',
+      dataKeyKey: 'memory',
+      color: '#795919',
+      unit: '%',
+      icon: HardDrive,
+    },
+    traffic: {
+      title: 'Egress Network Traffic (GB/s)',
+      dataKeyKey: 'traffic',
+      color: '#005231',
+      unit: ' GB/s',
+      icon: Activity,
+    },
+  };
+
+  const currentForecast = forecastConfigs[forecastTab];
+
   return (
-    <main className="pt-8 px-4 flex flex-col gap-6 pb-20" style={{ maxWidth: '800px', margin: '0 auto' }}>
-      {/* Welcome Section */}
-      <section>
-        <h1 className="text-2xl font-bold text-on-surface">Digital Tranquility</h1>
-        <p className="text-sm text-on-surface-variant">Your cloud ecosystem is optimized and thriving.</p>
-      </section>
+    <div className="space-y-8 pb-12">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-primary tracking-tight flex items-center gap-2.5">
+            Cloud Infrastructure Telemetry & Carbon Audit
+            <Sparkles className="w-6 h-6 text-secondary animate-pulse" />
+          </h1>
+          <p className="text-xs sm:text-sm text-on-surface-variant/80 mt-1">
+            Real-time Prophet forecasting, regional carbon factor accounting, and automated AWS right-sizing.
+          </p>
+        </div>
 
-      {/* KPI Cards */}
-      <section className="flex flex-wrap gap-4">
-        {/* Card 1: Cost */}
-        <div className="glass-card flex-1 min-w-[240px] p-6 rounded-xl flex flex-col gap-3">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary">payments</span>
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1.5 rounded-xl bg-primary/10 text-primary border border-primary/20 text-xs font-semibold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+            Live CloudWatch Sync Active
+          </span>
+        </div>
+      </div>
+
+      {/* KPI Cards Grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <ShimmerSkeleton type="kpi" />
+          <ShimmerSkeleton type="kpi" />
+          <ShimmerSkeleton type="kpi" />
+          <ShimmerSkeleton type="kpi" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <MetricCard
+            title="Monthly Carbon Avoidance"
+            value={`${mockStats.monthlyCarbonSaved.toLocaleString()} kg`}
+            subtext="CO2e reduced"
+            trend={mockStats.carbonTrend}
+            trendPositive={true}
+            icon={Leaf}
+            badgeText="Greener Cloud"
+          />
+          <MetricCard
+            title="Monthly Cost Savings"
+            value={`$${mockStats.monthlyCostSaved.toLocaleString()}`}
+            subtext="annualized $46.2k"
+            trend={mockStats.costTrend}
+            trendPositive={true}
+            icon={DollarSign}
+          />
+          <MetricCard
+            title="Efficiency Score"
+            value={`${mockStats.efficiencyScore}/100`}
+            subtext="Optimization rating"
+            trend={mockStats.efficiencyTrend}
+            trendPositive={true}
+            icon={TrendingUp}
+          />
+          <MetricCard
+            title="Audited Resources"
+            value={mockStats.totalResourcesAudited}
+            subtext={`${mockStats.autoApprovalCount} auto-approved`}
+            icon={Zap}
+          />
+        </div>
+      )}
+
+      {/* Section 1: Expanded Tabbed Forecast View */}
+      {isLoading ? (
+        <ShimmerSkeleton type="chart" />
+      ) : (
+        <div className="glass-card p-6 rounded-2xl border border-outline-variant/15 relative overflow-hidden">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-lg font-bold text-primary flex items-center gap-2">
+                <Activity className="w-5 h-5 text-primary" />
+                Predictive Telemetry & Prophet Resource Forecast
+              </h2>
+              <p className="text-xs text-on-surface-variant/80 mt-0.5">
+                30-day forward-looking machine learning trajectory based on workload patterns.
+              </p>
             </div>
-            <span className="text-primary-container font-medium flex items-center gap-1 bg-primary/5 px-2 py-0.5 rounded-full text-sm">
-              <span className="material-symbols-outlined text-xs">trending_down</span>
-              4.2%
-            </span>
+
+            {/* Forecast Tabs */}
+            <div className="flex items-center gap-1.5 bg-surface-container-low/60 p-1 rounded-xl border border-outline-variant/15 self-start lg:self-auto overflow-x-auto max-w-full">
+              <button
+                onClick={() => setForecastTab('cost')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                  forecastTab === 'cost'
+                    ? 'bg-white text-primary border border-outline-variant/20 shadow-sm'
+                    : 'text-on-surface-variant/70 hover:text-primary'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+                Cost ($)
+              </button>
+
+              <button
+                onClick={() => setForecastTab('cpu')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                  forecastTab === 'cpu'
+                    ? 'bg-white text-primary border border-outline-variant/20 shadow-sm'
+                    : 'text-on-surface-variant/70 hover:text-primary'
+                }`}
+              >
+                <Cpu className="w-3.5 h-3.5" />
+                CPU (%)
+              </button>
+
+              <button
+                onClick={() => setForecastTab('memory')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                  forecastTab === 'memory'
+                    ? 'bg-white text-primary border border-outline-variant/20 shadow-sm'
+                    : 'text-on-surface-variant/70 hover:text-primary'
+                }`}
+              >
+                <HardDrive className="w-3.5 h-3.5" />
+                Memory (%)
+              </button>
+
+              <button
+                onClick={() => setForecastTab('traffic')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                  forecastTab === 'traffic'
+                    ? 'bg-white text-primary border border-outline-variant/20 shadow-sm'
+                    : 'text-on-surface-variant/70 hover:text-primary'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                Traffic (GB/s)
+              </button>
+            </div>
           </div>
+
+          {/* Recharts Area Chart */}
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={forecastData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={currentForecast.color} stopOpacity={0.4} />
+                    <stop offset="95%" stopColor={currentForecast.color} stopOpacity={0.0} />
+                  </linearGradient>
+                  {currentForecast.baselineKey && (
+                    <linearGradient id="baselineGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ba1a1a" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#ba1a1a" stopOpacity={0.0} />
+                    </linearGradient>
+                  )}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(107, 101, 88, 0.15)" />
+                <XAxis dataKey="month" stroke="#6f7973" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#6f7973" tick={{ fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    borderColor: 'rgba(107, 101, 88, 0.15)',
+                    borderRadius: '12px',
+                    color: '#1c1c18',
+                    fontSize: '12px',
+                    boxShadow: '0 10px 25px -5px rgba(42,42,38,0.05)',
+                  }}
+                />
+                {currentForecast.baselineKey && (
+                  <Area
+                    type="monotone"
+                    dataKey={currentForecast.baselineKey}
+                    name="Unoptimized Baseline"
+                    stroke="#ba1a1a"
+                    strokeWidth={2}
+                    strokeDasharray="4 4"
+                    fill="url(#baselineGradient)"
+                  />
+                )}
+                  <Area
+                    type="monotone"
+                    dataKey={currentForecast.dataKeyKey}
+                    name={`Optimized ${currentForecast.title}`}
+                    stroke={currentForecast.color}
+                    strokeWidth={3}
+                    fill="url(#forecastGradient)"
+                  />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Section 2: Carbon Breakdown Card (Formula Visual + Comparison) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Formula Visual Card */}
+        <div className="lg:col-span-2 glass-card p-6 rounded-2xl border border-outline-variant/15 relative overflow-hidden flex flex-col justify-between">
           <div>
-            <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Cost Run-Rate</p>
-            <h2 className="text-3xl font-bold text-on-surface mt-1">$12.4k<span className="text-on-surface-variant text-sm font-normal">/mo</span></h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-on-surface flex items-center gap-2">
+                <Calculator className="w-5 h-5 text-primary" />
+                Carbon Accounting Formula Visualizer
+              </h2>
+              <span className="text-xs text-secondary bg-surface-container-low px-3 py-1 rounded-lg border border-outline-variant/15 font-mono">
+                GHG Protocol Scope 2
+              </span>
+            </div>
+
+            <p className="text-xs text-on-surface-variant/80 mb-5">
+              CloudLeaf computes real carbon impact by coupling hardware power draws with real-time regional electricity grid intensity factors.
+            </p>
+
+            {/* Visual Formula Inputs */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-surface-container-low/80 rounded-xl border border-outline-variant/15 mb-5">
+              <div className="text-center p-3 rounded-lg bg-white border border-outline-variant/10">
+                <span className="text-[10px] text-on-surface-variant/70 font-semibold block uppercase">Avg Power Load</span>
+                <span className="text-lg font-bold text-on-surface font-mono">{carbonBreakdownData.powerConsumptionKw} kW</span>
+                <span className="text-[10px] text-on-surface-variant/60 block">hardware draw</span>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-white border border-outline-variant/10">
+                <span className="text-[10px] text-on-surface-variant/70 font-semibold block uppercase">Running Duration</span>
+                <span className="text-lg font-bold text-secondary font-mono">{carbonBreakdownData.runningHours} hrs</span>
+                <span className="text-[10px] text-on-surface-variant/60 block">720 hrs/month</span>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-white border border-outline-variant/10">
+                <span className="text-[10px] text-on-surface-variant/70 font-semibold block uppercase">Grid Emission Factor</span>
+                <span className="text-lg font-bold text-secondary font-mono">{carbonBreakdownData.regionalCarbonFactor}</span>
+                <span className="text-[10px] text-on-surface-variant/60 block">kg CO2 / kWh</span>
+              </div>
+            </div>
+
+            {/* Formula Equation Line */}
+            <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between text-xs text-primary font-semibold">
+              <span className="font-mono">{carbonBreakdownData.formulaExplanation}</span>
+              <ArrowRight className="w-4 h-4 text-primary shrink-0 ml-2" />
+              <span className="font-bold text-primary text-sm font-mono shrink-0 ml-2">
+                = {carbonBreakdownData.currentCarbonKg} kg CO2
+              </span>
+            </div>
+          </div>
+
+          {/* Regional Grid Intensity Badges */}
+          <div className="mt-5 pt-4 border-t border-outline-variant/15">
+            <span className="text-[11px] font-semibold text-on-surface-variant/80 block mb-2">Regional Grid Intensity Mix:</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {carbonBreakdownData.regionMix.map((r, i) => (
+                <div key={i} className="p-2 rounded-lg bg-surface-container-low text-xs flex items-center justify-between border border-outline-variant/15">
+                  <span className="text-on-surface-variant truncate">{r.region}</span>
+                  <span className="font-mono font-bold" style={{ color: r.color }}>{r.factor}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Card 2: Carbon */}
-        <div className="glass-card flex-1 min-w-[240px] p-6 rounded-xl flex flex-col gap-3">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-lg bg-secondary-container/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-secondary">eco</span>
-            </div>
-            <span className="text-secondary font-medium flex items-center gap-1 bg-secondary/5 px-2 py-0.5 rounded-full text-sm">
-              <span className="material-symbols-outlined text-xs">trending_down</span>
-              2.1%
-            </span>
-          </div>
+        {/* Current vs Projected vs Saved Comparison Card */}
+        <div className="glass-card p-6 rounded-2xl border border-outline-variant/15 flex flex-col justify-between">
           <div>
-            <p className="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Carbon Footprint</p>
-            <h2 className="text-3xl font-bold text-on-surface mt-1">2.1t<span className="text-on-surface-variant text-sm font-normal"> CO2e</span></h2>
-          </div>
-        </div>
-      </section>
+            <h3 className="text-base font-bold text-on-surface mb-2 flex items-center gap-2">
+              <Leaf className="w-5 h-5 text-primary" />
+              Carbon Reduction Impact
+            </h3>
+            <p className="text-xs text-on-surface-variant/80 mb-6">
+              Comparing unoptimized legacy trajectory vs CloudLeaf automated optimization.
+            </p>
 
-      {/* Main Chart Section */}
-      <section className="glass-card rounded-2xl p-6 overflow-hidden relative">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h3 className="text-lg font-bold text-on-surface">Capacity Forecast</h3>
-            <p className="text-sm text-on-surface-variant">Efficiency vs Demand</p>
-          </div>
-          <div className="flex gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-primary-container"></span>
-              <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Capacity</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-secondary-container"></span>
-              <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Demand</span>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-xs font-semibold mb-1">
+                  <span className="text-error">Current Unoptimized</span>
+                  <span className="text-on-surface font-mono">{carbonBreakdownData.currentCarbonKg} kg CO2</span>
+                </div>
+                <div className="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
+                  <div className="h-full bg-error rounded-full" style={{ width: '100%' }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs font-semibold mb-1">
+                  <span className="text-primary">CloudLeaf Projected</span>
+                  <span className="text-on-surface font-mono">{carbonBreakdownData.projectedCarbonKg} kg CO2</span>
+                </div>
+                <div className="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full" style={{ width: '33.4%' }} />
+                </div>
+              </div>
+
+              <div className="p-4 bg-primary/5 border border-primary/15 rounded-xl text-center">
+                <span className="text-xs text-primary font-semibold block">Net Carbon Saved</span>
+                <span className="text-3xl font-extrabold text-primary font-mono">
+                  {carbonBreakdownData.monthlySavedKg} <span className="text-sm font-normal text-on-surface-variant/80">kg CO2/mo</span>
+                </span>
+                <span className="text-[11px] text-primary/80 block mt-0.5">
+                  Equivalent to planting ~65 urban trees monthly
+                </span>
+              </div>
             </div>
           </div>
         </div>
-        
-        <div className="h-64 w-full">
+      </div>
+
+      {/* Section 3: 6-Month Historical Trends Chart */}
+      <div className="glass-card p-6 rounded-2xl border border-outline-variant/15">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+          <div>
+            <h2 className="text-lg font-bold text-primary flex items-center gap-2">
+              <Layers className="w-5 h-5 text-secondary" />
+              Historical 6-Month Sustainability & Cost Audit Trends
+            </h2>
+            <p className="text-xs text-on-surface-variant/80">
+              Verified cumulative savings performance across previous billing cycles.
+            </p>
+          </div>
+          <span className="text-xs px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant border border-outline-variant/15 self-start sm:self-auto font-mono">
+            Feb 2026 – Jul 2026
+          </span>
+        </div>
+
+        <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={forecastData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorCapacity" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorDemand" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0566d9" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#0566d9" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="day" stroke="#bbcabf" tick={{ fill: '#bbcabf', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
-              <YAxis stroke="#bbcabf" tick={{ fill: '#bbcabf', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <Tooltip 
-                contentStyle={{ background: '#161d19', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px' }}
-                itemStyle={{ color: '#dde4dd' }}
+            <BarChart data={historicalTrendsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(107, 101, 88, 0.15)" />
+              <XAxis dataKey="period" stroke="#6f7973" tick={{ fontSize: 11 }} />
+              <YAxis stroke="#6f7973" tick={{ fontSize: 11 }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#ffffff',
+                  borderColor: 'rgba(107, 101, 88, 0.15)',
+                  borderRadius: '12px',
+                  color: '#1c1c18',
+                  fontSize: '12px',
+                }}
               />
-              <ReferenceLine x="Wed" stroke="#f59e0b" strokeDasharray="3 3" label={{ position: 'top', value: 'Today', fill: '#f59e0b', fontSize: 12 }} />
-              
-              <Area type="monotone" dataKey="capacity" stroke="#10b981" fillOpacity={1} fill="url(#colorCapacity)" strokeWidth={2} />
-              <Area type="monotone" dataKey="predicted" stroke="#0566d9" fillOpacity={1} fill="url(#colorDemand)" strokeWidth={2} />
-              <Area type="monotone" dataKey="actual" stroke="#dde4dd" fill="none" strokeWidth={2} />
-            </AreaChart>
+              <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
+              <Bar dataKey="savings" name="Cost Savings ($)" fill="#005237" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="co2Reduced" name="CO2 Reduced (kg)" fill="#c9a15a" radius={[6, 6, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
-      </section>
-
-      {/* Active Insights Feed */}
-      <section className="flex flex-col gap-4 mt-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-bold text-on-surface">Active Insights</h3>
-          <button className="text-primary text-sm font-semibold flex items-center gap-1">
-            View All <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </button>
-        </div>
-
-        {/* Insight 1 */}
-        <div className="glass-card rounded-xl p-4 border-l-4 border-l-primary-container">
-          <div className="flex gap-4">
-            <div className="shrink-0 w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-2xl">memory</span>
-            </div>
-            <div className="flex-1">
-              <div className="flex justify-between items-start mb-1">
-                <h4 className="font-semibold text-on-surface">Idle EC2 Instance Detected</h4>
-                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase">98% Conf.</span>
-              </div>
-              <p className="text-sm text-on-surface-variant mb-3">i-0a12b34c56 has had 0% CPU utilization for 7 days.</p>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-primary-container text-sm">savings</span>
-                  <span className="text-primary-container font-medium text-sm">$420/mo</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-secondary text-sm">cloud_done</span>
-                  <span className="text-secondary font-medium text-sm">0.2t CO2e</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Insight 2 */}
-        <div className="glass-card rounded-xl p-4 border-l-4 border-l-secondary">
-          <div className="flex gap-4">
-            <div className="shrink-0 w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
-              <span className="material-symbols-outlined text-secondary text-2xl">database</span>
-            </div>
-            <div className="flex-1">
-              <div className="flex justify-between items-start mb-1">
-                <h4 className="font-semibold text-on-surface">RDS Over-provisioned</h4>
-                <span className="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-[10px] font-bold uppercase">92% Conf.</span>
-              </div>
-              <p className="text-sm text-on-surface-variant mb-3">Production DB is running on db.m5.4xlarge but peak load only requires 2xlarge.</p>
-              <div className="flex gap-4">
-                <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-primary-container text-sm">savings</span>
-                  <span className="text-primary-container font-medium text-sm">$150/mo</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sustainability Report | CloudLeaf</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#fcf9f2",
+                        "primary-fixed": "#a8f2cc",
+                        "secondary": "#795919",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e5e2dc",
+                        "outline": "#6f7973",
+                        "on-primary-fixed-variant": "#005237",
+                        "on-background": "#1c1c18",
+                        "surface-container": "#f0eee7",
+                        "inverse-on-surface": "#f3f0ea",
+                        "surface-container-low": "#f6f3ed",
+                        "on-surface": "#1c1c18",
+                        "secondary-container": "#fdd185",
+                        "inverse-primary": "#8cd6b1",
+                        "surface-dim": "#dcdad4",
+                        "primary-fixed-dim": "#8cd6b1",
+                        "primary": "#005237",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#9ee9c3",
+                        "secondary-container": "#fdd185",
+                        "on-tertiary-container": "#94ecb6",
+                        "surface-tint": "#1f6b4d",
+                        "surface-container-high": "#ebe8e1",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#bfc9c1",
+                        "secondary-fixed": "#ffdea9",
+                        "background": "#fcf9f2",
+                        "on-surface-variant": "#3f4943",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#1f6b4d",
+                        "tertiary-container": "#046d43"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "container-max": "1440px",
+                        "stack-lg": "48px",
+                        "stack-sm": "12px",
+                        "stack-md": "24px",
+                        "gutter": "24px",
+                        "margin-desktop": "48px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Geist"],
+                        "number-display": ["Geist"],
+                        "headline-md": ["Geist"],
+                        "label-caps": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg-mobile": ["Geist"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "number-display": ["36px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "500"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #faf8f3;
+            color: #1c1c18;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(107, 101, 88, 0.15);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #005237 0%, #795919 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 bg-white/60 dark:bg-on-background/60 backdrop-blur-xl border-b border-outline-variant/15 shadow-sm shadow-secondary/5">
+<div class="flex items-center gap-4">
+<span class="font-display-lg text-display-lg-mobile md:text-display-lg font-semibold text-primary dark:text-primary-fixed-dim">CloudLeaf</span>
+</div>
+<div class="hidden md:flex gap-4">
+<button class="px-4 py-2 rounded-full border border-outline-variant/30 text-body-md font-medium text-on-surface-variant hover:bg-primary-container/10 transition-colors duration-300">Export PDF</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant/30 text-body-md font-medium text-on-surface-variant hover:bg-primary-container/10 transition-colors duration-300">Export CSV</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant/30 text-body-md font-medium text-on-surface-variant hover:bg-primary-container/10 transition-colors duration-300">Share</button>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary scale-95 active:scale-90 transition-transform cursor-pointer">notifications</span>
+<div class="w-10 h-10 rounded-full bg-surface-container overflow-hidden border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female sustainability officer in a bright, modern office with soft natural lighting. She has a serene and confident expression, reflecting the boutique sustainability brand of CloudLeaf. The image is crisp, with a shallow depth of field, using warm ivory tones and soft sage green accents in the background decor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCnpgKL9zw66ob_MjRvlemxan7vXuHN0knuzalU3BKNlALqaIlKg-8az-br-gDfllkguUnD5ZU18WIosypQgtndhm9Ieh7Mm9vzYcl7pYAMJksR_HIxUs9et-acutWqukPgrwe25uCsaq-Lppzf87Cs7A3vVio5a9NnAPwWozfkNZoacG1NVERgNvjzwegFnIpvYyollQstO17vMMqlvftpNjwlKLBc0HiixejJcJxVQ2gQDfnTvD8"/>
+</div>
+</div>
+</header>
+<main class="mt-24 mb-32 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto space-y-stack-lg">
+<!-- Hero Section -->
+<section class="glass-card rounded-[32px] p-8 md:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
+<div class="flex-1 space-y-4 text-center md:text-left">
+<h2 class="font-label-caps text-label-caps text-secondary tracking-widest uppercase">Performance Index</h2>
+<div class="space-y-2">
+<span class="font-display-lg text-6xl md:text-8xl gradient-text block">84.2</span>
+<p class="font-headline-md text-headline-md text-on-surface-variant max-w-md">Sustainability Score</p>
+</div>
+<div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-container/10 border border-primary/10">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-primary font-medium">Top 15% of similar-sized peers.</span>
+</div>
+</div>
+<div class="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+<div class="absolute inset-0 rounded-full border-[1px] border-secondary/10 animate-[spin_20s_linear_infinite]"></div>
+<div class="absolute inset-4 rounded-full border-[1px] border-primary/20 animate-[spin_15s_linear_infinite_reverse]"></div>
+<div class="glass-card w-48 h-48 md:w-56 md:h-56 rounded-full flex flex-col items-center justify-center shadow-xl shadow-primary/5 animate-float">
+<span class="material-symbols-outlined text-6xl text-primary" style="font-variation-settings: 'wght' 100;">eco</span>
+<span class="font-label-caps text-[10px] mt-2 opacity-60">OPTIMIZED</span>
+</div>
+</div>
+</section>
+<!-- Stat Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="glass-card rounded-xl p-8 space-y-4 hover:shadow-lg transition-all duration-300">
+<div class="w-12 h-12 rounded-lg bg-primary/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">co2</span>
+</div>
+<div>
+<h3 class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Total Carbon Avoided</h3>
+<p class="font-number-display text-number-display text-on-surface mt-1">124.8 <span class="text-body-md font-normal opacity-60">mtCO2e</span></p>
+</div>
+</div>
+<div class="glass-card rounded-xl p-8 space-y-4 hover:shadow-lg transition-all duration-300">
+<div class="w-12 h-12 rounded-lg bg-secondary/5 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">savings</span>
+</div>
+<div>
+<h3 class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Total Cost Saved</h3>
+<p class="font-number-display text-number-display text-on-surface mt-1">$42,190 <span class="text-body-md font-normal opacity-60">USD</span></p>
+</div>
+</div>
+<div class="glass-card rounded-xl p-8 space-y-4 hover:shadow-lg transition-all duration-300">
+<div class="w-12 h-12 rounded-lg bg-tertiary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary">bolt</span>
+</div>
+<div>
+<h3 class="font-label-caps text-label-caps text-outline uppercase tracking-wider">Automated Actions</h3>
+<p class="font-number-display text-number-display text-on-surface mt-1">1,402 <span class="text-body-md font-normal opacity-60">events</span></p>
+</div>
+</div>
+</section>
+<!-- Progress Bar & Details -->
+<section class="glass-card rounded-[24px] p-8 md:p-10 space-y-8">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="space-y-1">
+<h2 class="font-headline-md text-headline-md text-on-surface">Energy Composition</h2>
+<p class="text-on-surface-variant font-body-md max-w-lg">Your infrastructure is primarily powered by clean grid sources and real-time optimization protocols.</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="font-label-caps text-xs">Clean Grid (62%)</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-secondary-container"></div>
+<span class="font-label-caps text-xs">Optimized (24%)</span>
+</div>
+</div>
+</div>
+<!-- Segmented Progress Bar -->
+<div class="relative h-12 w-full bg-surface-container rounded-full overflow-hidden flex shadow-inner">
+<div class="h-full bg-primary transition-all duration-1000 ease-out flex items-center justify-center" style="width: 62%;">
+<span class="text-[10px] font-bold text-white uppercase hidden md:block">Grid</span>
+</div>
+<div class="h-full bg-secondary-container transition-all duration-1000 delay-300 ease-out flex items-center justify-center" style="width: 24%;">
+<span class="text-[10px] font-bold text-secondary uppercase hidden md:block">Optimized</span>
+</div>
+<div class="h-full bg-outline-variant/30 transition-all duration-1000 delay-500 ease-out flex items-center justify-center" style="width: 14%;">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase hidden md:block">Offset</span>
+</div>
+</div>
+<!-- Detailed Analysis Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-outline-variant/15">
+<div class="space-y-4">
+<h3 class="font-label-caps text-label-caps text-primary tracking-widest uppercase">Key Insights</h3>
+<ul class="space-y-4">
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-primary mt-1">trending_up</span>
+<p class="text-body-md text-on-surface-variant">Infrastructure efficiency increased by 12.4% following the deployment of automated region-switching policies.</p>
+</li>
+<li class="flex gap-4">
+<span class="material-symbols-outlined text-primary mt-1">cloud_done</span>
+<p class="text-body-md text-on-surface-variant">Carbon intensity per TB of data processed reached an all-time low of 0.42kg/CO2 in October.</p>
+</li>
+</ul>
+</div>
+<div class="rounded-2xl overflow-hidden glass-card h-48 relative">
+<img class="w-full h-full object-cover opacity-80" data-alt="A clean, abstract architectural visualization of a sustainable data center interior. Soft, warm ivory lighting bounces off frosted glass panels and sleek sage-green server racks. The composition is minimal and airy, reinforcing the 'Ivory Canopy' and 'Boutique Sustainability' aesthetic of the CloudLeaf platform. High-end, premium feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSbEDq8j2I41LFF85gHwhtbjTmnBOv88GuO_RDLswTqijJcH3YhrjZ3Fuyb-nG6nAttGCEm9_tWKxjUDtzFfj0BmK9fMfl6yKe-CzVCWrYTACDlsA3wooguXjJQ5J40Pzlo1IrO2Vp3uI5XTN4g6pEsRDoSBqh9mp7n1hO-rsl65mw7XBt9OD1c0hW_sPJmbWRy5k8tPIpBaNWDLd21hamU025vtV9vtAO_bYyOw-NObzVZxtuPGIS"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-bright to-transparent flex items-end p-6">
+<span class="text-primary font-medium flex items-center gap-2">View Technical Audit <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-3 px-margin-mobile bg-white/60 dark:bg-on-background/60 backdrop-blur-xl border-t border-outline-variant/15 shadow-[0_-4px_24px_rgba(42,42,38,0.04)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-caps text-label-caps mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">bolt</span>
+<span class="font-label-caps text-label-caps mt-1">Actions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity active:scale-95 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-label-caps text-label-caps mt-1">Report</span>
+</a>
+</nav>
+<script>
+        // Micro-interaction for buttons
+        document.querySelectorAll('button, a').forEach(el => {
+            el.addEventListener('mousedown', () => {
+                el.style.transform = 'scale(0.95)';
+            });
+            el.addEventListener('mouseup', () => {
+                el.style.transform = 'scale(1)';
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body></html>
