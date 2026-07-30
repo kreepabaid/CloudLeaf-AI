@@ -1,15 +1,78 @@
 {
-  "id": "string",
-  "type": "idle | over-provisioned | no-network",
-  "instance_id": "string",
-  "region": "string",
-  "tags": {
-    "env": "prod | dev",
-    "critical": "true | false"
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CloudLeaf Optimization Insight",
+  "description": "Shared contract for optimization insights exchanged between AI validator, automation engine, and Lambda handler.",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "instance_id",
+    "region",
+    "tags",
+    "cpu_avg_7d",
+    "recommendation",
+    "confidence",
+    "estimated_savings_usd"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the insight."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["idle", "over-provisioned", "no-network"],
+      "description": "Category of the optimization insight."
+    },
+    "instance_id": {
+      "type": "string",
+      "description": "AWS EC2 instance ID."
+    },
+    "region": {
+      "type": "string",
+      "description": "AWS region where the instance is running."
+    },
+    "tags": {
+      "type": "object",
+      "required": ["env", "critical"],
+      "properties": {
+        "env": {
+          "type": "string",
+          "enum": ["prod", "dev"],
+          "description": "Environment classification."
+        },
+        "critical": {
+          "type": "boolean",
+          "description": "Whether the workload is business-critical."
+        }
+      },
+      "additionalProperties": false
+    },
+    "cpu_avg_7d": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Average CPU utilization over the last 7 days (percentage)."
+    },
+    "recommendation": {
+      "type": "string",
+      "description": "Human-readable recommendation string."
+    },
+    "target_instance_type": {
+      "type": ["string", "null"],
+      "description": "Suggested instance type for right-sizing. Null if action is stop/terminate."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "AI confidence score for this recommendation (percentage)."
+    },
+    "estimated_savings_usd": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Estimated monthly cost savings in USD."
+    }
   },
-  "cpu_avg_7d": "number",
-  "recommendation": "stop | resize | none",
-  "target_instance_type": "string | null",
-  "confidence": "number",
-  "estimated_savings_usd": "number"
+  "additionalProperties": false
 }
