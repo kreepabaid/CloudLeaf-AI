@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Zap, 
   Filter, 
@@ -11,13 +11,63 @@ import {
 import InsightCard from '../components/InsightCard';
 import ValidationModal from '../components/ValidationModal';
 import ShimmerSkeleton from '../components/ShimmerSkeleton';
-import { mockInsights } from '../data/mockData';
+
+function mapApiInsightToCard(apiItem) {
+  const ins = apiItem.insight || apiItem;
+  const val = apiItem.validation || {};
+  const isNeedsApprove = val.decision === 'needs_approval';
+  const isHighRisk = ins.tags?.critical === true || ins.risk === 'high';
+
+  return {
+    id: ins.id || ins.instance_id,
+    title: ins.recommendation ? `${ins.recommendation} (${ins.instance_id})` : (ins.title || `Optimize ${ins.instance_id}`),
+    resourceId: ins.instance_id || ins.resourceId || 'i-unknown',
+    awsService: ins.awsService || 'EC2',
+    region: ins.region || 'us-east-1',
+    category: ins.type === 'idle' ? 'Zombie Cleanup' : ins.type === 'over-provisioned' ? 'Right-sizing' : (ins.category || 'Optimization'),
+    savings: ins.estimated_savings_usd ? `$${ins.estimated_savings_usd}/mo` : (ins.savings || '$25/mo'),
+    co2Saved: ins.estimated_savings_usd ? `${Math.round(ins.estimated_savings_usd * 4.2)} kg CO2/mo` : (ins.co2Saved || '105 kg CO2/mo'),
+    impact: ins.impact || (ins.confidence > 80 ? 'High' : 'Medium'),
+    risk: isHighRisk ? 'high' : (ins.risk || 'low'),
+    requiresApproval: isNeedsApprove,
+    isCritical: isHighRisk,
+    reasoning: val.reason || ins.reasoning || `CloudWatch metrics show CPU avg of ${ins.cpu_avg_7d}%. Recommending ${ins.recommendation}.`,
+    status: apiItem.automation_result?.status === 'success' ? 'executed' : (ins.status || 'pending'),
+    createdAt: ins.createdAt || 'Just now',
+  };
+}
 
 export default function ActionCenter({ onShowToast }) {
-  const [insights, setInsights] = useState(mockInsights);
+  const [insights, setInsights] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [actionError, setActionError] = useState(null);
+  const [executingId, setExecutingId] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'high_risk' | 'auto_approved' | 'awaiting' | 'executed'
   const [validatingInsight, setValidatingInsight] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchInsights = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/insights');
+      if (!res.ok) {
+        throw new Error('Could not connect to backend');
+      }
+      const data = await res.json();
+      const rawList = data.insights || [];
+      setInsights(rawList.map(mapApiInsightToCard));
+    } catch (err) {
+      console.error('Error fetching insights:', err);
+      setError('Could not connect to backend');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInsights();
+  }, []);
 
   // Filter logic
   const filteredInsights = insights.filter((item) => {
@@ -29,56 +79,79 @@ export default function ActionCenter({ onShowToast }) {
     return item.status === 'pending';
   });
 
-  // Handle Approve button click -> Triggers Task 2 ValidationModal animation
-  const handleApprove = (insight) => {
-    setValidatingInsight(insight);
-  };
-
-  // Called when ValidationModal finishes sequential checkmarks
-  const handleValidationComplete = (insight) => {
-    setValidatingInsight(null);
-
-    // Move insight to executed status
-    setInsights((prev) =>
-      prev.map((item) =>
-        item.id === insight.id
-          ? { ...item, status: 'executed', executedAt: 'Just now' }
-          : item
-      )
-    );
-
-    // Trigger Toast confirmation
-    if (onShowToast) {
-      onShowToast({
-        type: 'success',
-        title: `Action Executed: ${insight.awsService}`,
-        message: `Successfully executed optimization for ${insight.resourceId}. Saved ${insight.savings} & ${insight.co2Saved}. Risk level: ${insight.risk.toUpperCase()}.`,
+  // Handle Approve button click
+  const handleApprove = async (insight) => {
+    setActionError(null);
+    setExecutingId(insight.id);
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/actions/${insight.id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force_approve: true }),
       });
+
+      if (!res.ok) {
+        throw new Error(`Failed to approve action for ${insight.id}`);
+      }
+
+      // Remove insight from displayed list on success
+      setInsights((prev) => prev.filter((item) => item.id !== insight.id));
+
+      if (onShowToast) {
+        onShowToast({
+          type: 'success',
+          title: `Action Executed: ${insight.awsService}`,
+          message: `Successfully executed optimization for ${insight.resourceId}.`,
+        });
+      }
+    } catch (err) {
+      console.error('Approve POST error:', err);
+      setActionError(`Failed to approve recommendation for ${insight.resourceId || insight.id}`);
+    } finally {
+      setExecutingId(null);
     }
   };
 
   // Handle Dismiss action
-  const handleDismiss = (id) => {
+  const handleDismiss = async (id) => {
+    setActionError(null);
+    setExecutingId(id);
     const item = insights.find((i) => i.id === id);
-    setInsights((prev) => prev.filter((i) => i.id !== id));
-
-    if (onShowToast) {
-      onShowToast({
-        type: 'info',
-        title: 'Recommendation Dismissed',
-        message: `Dismissed recommendation ${item?.resourceId || id}.`,
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/actions/${id}/dismiss`, {
+        method: 'POST',
       });
+
+      if (!res.ok) {
+        throw new Error(`Failed to dismiss recommendation ${id}`);
+      }
+
+      // Remove insight from displayed list on success
+      setInsights((prev) => prev.filter((i) => i.id !== id));
+
+      if (onShowToast) {
+        onShowToast({
+          type: 'info',
+          title: 'Recommendation Dismissed',
+          message: `Dismissed recommendation ${item?.resourceId || id}.`,
+        });
+      }
+    } catch (err) {
+      console.error('Dismiss POST error:', err);
+      setActionError(`Failed to dismiss recommendation ${item?.resourceId || id}`);
+    } finally {
+      setExecutingId(null);
     }
   };
 
-  // Reset queue button
+  // Reset queue button (refetch from API)
   const handleResetQueue = () => {
-    setInsights(mockInsights);
+    fetchInsights();
     if (onShowToast) {
       onShowToast({
         type: 'info',
-        title: 'Queue Reset',
-        message: 'Restored original hackathon mock recommendations queue.',
+        title: 'Queue Refreshed',
+        message: 'Refreshed recommendations from backend API.',
       });
     }
   };
@@ -89,7 +162,7 @@ export default function ActionCenter({ onShowToast }) {
       {validatingInsight && (
         <ValidationModal
           insight={validatingInsight}
-          onComplete={handleValidationComplete}
+          onComplete={() => setValidatingInsight(null)}
           onCancel={() => setValidatingInsight(null)}
         />
       )}
@@ -111,9 +184,30 @@ export default function ActionCenter({ onShowToast }) {
           className="px-4 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-on-surface-variant border border-outline-variant/20 transition-colors flex items-center gap-2 self-start md:self-auto"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          Reset Demo Queue
+          Refresh Recommendations
         </button>
       </div>
+
+      {/* Action error banner */}
+      {actionError && (
+        <div className="p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm font-semibold flex items-center justify-between">
+          <span>{actionError}</span>
+          <button 
+            onClick={() => setActionError(null)}
+            className="text-xs underline hover:text-error/80 ml-4"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Main fetch error banner */}
+      {error && (
+        <div className="p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm font-semibold flex items-center justify-between">
+          <span>Could not connect to backend</span>
+          <span className="text-xs text-error/80 font-normal">Check FastAPI server at http://127.0.0.1:8000</span>
+        </div>
+      )}
 
       {/* Filter Tabs Header Bar */}
       <div className="flex items-center gap-2 bg-surface-container-low/60 p-1.5 rounded-2xl border border-outline-variant/15 overflow-x-auto">
@@ -179,11 +273,17 @@ export default function ActionCenter({ onShowToast }) {
         </button>
       </div>
 
-      {/* Insights List / Empty State */}
+      {/* Insights List / Loading / Empty State */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ShimmerSkeleton />
-          <ShimmerSkeleton />
+        <div className="space-y-4">
+          <div className="text-xs font-semibold text-primary animate-pulse flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+            Loading...
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ShimmerSkeleton />
+            <ShimmerSkeleton />
+          </div>
         </div>
       ) : filteredInsights.length === 0 ? (
         /* Empty State */
@@ -210,7 +310,7 @@ export default function ActionCenter({ onShowToast }) {
               insight={insight}
               onApprove={handleApprove}
               onDismiss={handleDismiss}
-              isExecuting={validatingInsight?.id === insight.id}
+              isExecuting={executingId === insight.id}
             />
           ))}
         </div>
