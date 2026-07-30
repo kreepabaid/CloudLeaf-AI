@@ -10,6 +10,7 @@ from backend.routes.insights import router as insights_router
 from backend.routes.metrics import router as metrics_router
 from backend.routes.actions import router as actions_router
 from backend.routes.reports import router as reports_router
+from backend.routes.account import router as account_router
 from backend.seed_history import seed_demo_history
 
 app = FastAPI(
@@ -43,6 +44,7 @@ app.include_router(insights_router, prefix="/api")
 app.include_router(metrics_router, prefix="/api")
 app.include_router(actions_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
+app.include_router(account_router, prefix="/api")
 
 
 @app.get("/")
