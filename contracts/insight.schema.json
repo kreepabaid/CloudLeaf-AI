@@ -1,0 +1,15 @@
+{
+  "id": "string",
+  "type": "idle | over-provisioned | no-network",
+  "instance_id": "string",
+  "region": "string",
+  "tags": {
+    "env": "prod | dev",
+    "critical": "true | false"
+  },
+  "cpu_avg_7d": "number",
+  "recommendation": "stop | resize | none",
+  "target_instance_type": "string | null",
+  "confidence": "number",
+  "estimated_savings_usd": "number"
+}
