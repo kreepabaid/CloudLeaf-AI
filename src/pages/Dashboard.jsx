@@ -29,31 +29,7 @@ import {
 import MetricCard from '../components/MetricCard';
 import ShimmerSkeleton from '../components/ShimmerSkeleton';
 
-// TODO: replace with real per-instance carbon breakdown and forecast once backend supports it
-const forecastData = [
-  { month: 'Feb', cost: 1450, baselineCost: 1800, cpu: 42, memory: 55, traffic: 12.4 },
-  { month: 'Mar', cost: 1380, baselineCost: 1820, cpu: 39, memory: 52, traffic: 13.1 },
-  { month: 'Apr', cost: 1290, baselineCost: 1850, cpu: 35, memory: 48, traffic: 14.0 },
-  { month: 'May', cost: 1180, baselineCost: 1880, cpu: 31, memory: 44, traffic: 14.8 },
-  { month: 'Jun', cost: 1050, baselineCost: 1910, cpu: 28, memory: 41, traffic: 15.5 },
-  { month: 'Jul', cost: 920, baselineCost: 1950, cpu: 25, memory: 38, traffic: 16.2 },
-];
-
-// TODO: replace with real per-instance carbon breakdown and forecast once backend supports it
-const carbonBreakdownData = {
-  powerConsumptionKw: 2.85,
-  runningHours: 720,
-  regionalCarbonFactor: 0.385,
-  formulaExplanation: '(2.85 kW × 720 hrs × 0.385 kg CO2/kWh)',
-  currentCarbonKg: 790,
-  projectedCarbonKg: 264,
-  monthlySavedKg: 526,
-  regionMix: [
-    { region: 'us-east-1 (N. Virginia)', factor: '0.385 kg/kWh', color: '#005237' },
-    { region: 'eu-west-1 (Ireland)', factor: '0.295 kg/kWh', color: '#1f6b4d' },
-    { region: 'ap-south-1 (Mumbai)', factor: '0.708 kg/kWh', color: '#ba1a1a' },
-  ],
-};
+const REGION_COLORS = ['#005237', '#1f6b4d', '#795919', '#ba1a1a'];
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -69,6 +45,17 @@ export default function Dashboard() {
     awaitingApprovalCount: 0,
   });
   const [historicalTrends, setHistoricalTrends] = useState([]);
+  const [forecastData, setForecastData] = useState([]);
+  const [carbonBreakdown, setCarbonBreakdown] = useState({
+    powerConsumptionKw: 2.85,
+    runningHours: 720,
+    regionalCarbonFactor: 0.385,
+    formulaExplanation: '(2.85 kW × 720 hrs × 0.385 kg CO2/kWh)',
+    currentCarbonKg: 790,
+    projectedCarbonKg: 264,
+    monthlySavedKg: 526,
+    regionMix: [],
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [forecastTab, setForecastTab] = useState('cost'); // 'cost' | 'cpu' | 'memory' | 'traffic'
@@ -96,6 +83,7 @@ export default function Dashboard() {
         const metricsList = metricsData.metrics || [];
         const currentStats = reportsData.current_stats || {};
         const historicalTrendsDataList = reportsData.historical_trends || [];
+        const rawForecastList = reportsData.forecast || [];
 
         const totalResourcesAudited = currentStats.totalResourcesAudited ?? metricsData.count ?? metricsList.length;
         const activeInsightsCount = currentStats.activeInsightsCount ?? insightsData.count ?? insightsList.length;
@@ -127,6 +115,22 @@ export default function Dashboard() {
         });
 
         setHistoricalTrends(historicalTrendsDataList);
+        if (reportsData.carbon_breakdown) {
+          setCarbonBreakdown(reportsData.carbon_breakdown);
+        }
+
+        // Note: CPU (%), Memory (%), and Traffic (GB/s) metrics remain mock simulated data because the backend currently provides a naive 7-point linear trend projection for Cost ($) and Carbon (kg) only.
+        const mergedForecast = rawForecastList.map((item, idx) => ({
+          month: item.month || item.period || `M${idx + 1}`,
+          cost: item.cost ?? 1000,
+          baselineCost: item.baselineCost ?? 1200,
+          carbon: item.carbon ?? 300,
+          // Simulated sub-fields for CPU, Memory, and Traffic tabs until backend telemetry adds per-metric forecasting
+          cpu: [42, 39, 35, 31, 28, 25, 22][idx] ?? 30,
+          memory: [55, 52, 48, 44, 41, 38, 35][idx] ?? 40,
+          traffic: [12.4, 13.1, 14.0, 14.8, 15.5, 16.2, 17.0][idx] ?? 15.0,
+        }));
+        setForecastData(mergedForecast);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Could not connect to backend');
@@ -395,27 +399,27 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-surface-container-low/80 rounded-xl border border-outline-variant/15 mb-5">
               <div className="text-center p-3 rounded-lg bg-white border border-outline-variant/10">
                 <span className="text-[10px] text-on-surface-variant/70 font-semibold block uppercase">Avg Power Load</span>
-                <span className="text-lg font-bold text-on-surface font-mono">{carbonBreakdownData.powerConsumptionKw} kW</span>
+                <span className="text-lg font-bold text-on-surface font-mono">{carbonBreakdown.powerConsumptionKw} kW</span>
                 <span className="text-[10px] text-on-surface-variant/60 block">hardware draw</span>
               </div>
               <div className="text-center p-3 rounded-lg bg-white border border-outline-variant/10">
                 <span className="text-[10px] text-on-surface-variant/70 font-semibold block uppercase">Running Duration</span>
-                <span className="text-lg font-bold text-secondary font-mono">{carbonBreakdownData.runningHours} hrs</span>
+                <span className="text-lg font-bold text-secondary font-mono">{carbonBreakdown.runningHours} hrs</span>
                 <span className="text-[10px] text-on-surface-variant/60 block">720 hrs/month</span>
               </div>
               <div className="text-center p-3 rounded-lg bg-white border border-outline-variant/10">
                 <span className="text-[10px] text-on-surface-variant/70 font-semibold block uppercase">Grid Emission Factor</span>
-                <span className="text-lg font-bold text-secondary font-mono">{carbonBreakdownData.regionalCarbonFactor}</span>
+                <span className="text-lg font-bold text-secondary font-mono">{carbonBreakdown.regionalCarbonFactor}</span>
                 <span className="text-[10px] text-on-surface-variant/60 block">kg CO2 / kWh</span>
               </div>
             </div>
 
             {/* Formula Equation Line */}
             <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between text-xs text-primary font-semibold">
-              <span className="font-mono">{carbonBreakdownData.formulaExplanation}</span>
+              <span className="font-mono">{carbonBreakdown.formulaExplanation}</span>
               <ArrowRight className="w-4 h-4 text-primary shrink-0 ml-2" />
               <span className="font-bold text-primary text-sm font-mono shrink-0 ml-2">
-                = {carbonBreakdownData.currentCarbonKg} kg CO2
+                = {carbonBreakdown.currentCarbonKg} kg CO2
               </span>
             </div>
           </div>
@@ -424,10 +428,10 @@ export default function Dashboard() {
           <div className="mt-5 pt-4 border-t border-outline-variant/15">
             <span className="text-[11px] font-semibold text-on-surface-variant/80 block mb-2">Regional Grid Intensity Mix:</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {carbonBreakdownData.regionMix.map((r, i) => (
+              {(carbonBreakdown.regionMix || []).map((r, i) => (
                 <div key={i} className="p-2 rounded-lg bg-surface-container-low text-xs flex items-center justify-between border border-outline-variant/15">
-                  <span className="text-on-surface-variant truncate">{r.region}</span>
-                  <span className="font-mono font-bold" style={{ color: r.color }}>{r.factor}</span>
+                  <span className="text-on-surface-variant truncate">{r.region} ({r.usagePct}%)</span>
+                  <span className="font-mono font-bold" style={{ color: REGION_COLORS[i % REGION_COLORS.length] }}>{r.factor}</span>
                 </div>
               ))}
             </div>
@@ -449,7 +453,7 @@ export default function Dashboard() {
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1">
                   <span className="text-error">Current Unoptimized</span>
-                  <span className="text-on-surface font-mono">{carbonBreakdownData.currentCarbonKg} kg CO2</span>
+                  <span className="text-on-surface font-mono">{carbonBreakdown.currentCarbonKg} kg CO2</span>
                 </div>
                 <div className="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
                   <div className="h-full bg-error rounded-full" style={{ width: '100%' }} />
@@ -459,7 +463,7 @@ export default function Dashboard() {
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-1">
                   <span className="text-primary">CloudLeaf Projected</span>
-                  <span className="text-on-surface font-mono">{carbonBreakdownData.projectedCarbonKg} kg CO2</span>
+                  <span className="text-on-surface font-mono">{carbonBreakdown.projectedCarbonKg} kg CO2</span>
                 </div>
                 <div className="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
                   <div className="h-full bg-primary rounded-full" style={{ width: '33.4%' }} />
@@ -469,7 +473,7 @@ export default function Dashboard() {
               <div className="p-4 bg-primary/5 border border-primary/15 rounded-xl text-center">
                 <span className="text-xs text-primary font-semibold block">Net Carbon Saved</span>
                 <span className="text-3xl font-extrabold text-primary font-mono">
-                  {carbonBreakdownData.monthlySavedKg} <span className="text-sm font-normal text-on-surface-variant/80">kg CO2/mo</span>
+                  {carbonBreakdown.monthlySavedKg} <span className="text-sm font-normal text-on-surface-variant/80">kg CO2/mo</span>
                 </span>
                 <span className="text-[11px] text-primary/80 block mt-0.5">
                   Equivalent to planting ~65 urban trees monthly
