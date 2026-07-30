@@ -1,97 +1,66 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Header from './components/Header';
+import BottomNav from './components/BottomNav';
+import ChatbotShell from './components/ChatbotShell';
+import Toast from './components/Toast';
 import Dashboard from './pages/Dashboard';
 import ActionCenter from './pages/ActionCenter';
-import ConnectWizard from './pages/ConnectWizard';
 import Report from './pages/Report';
-import './App.css'; // Left empty or removed, using tailwind now
+import Settings from './pages/Settings';
+import ConnectWizard from './pages/ConnectWizard';
+import { mockNotifications } from './data/mockData';
+import './App.css';
 
-function Header() {
-  const location = useLocation();
-  if (location.pathname === '/') return null; // No header in wizard
+export default function App() {
+  const [notifications, setNotifications] = useState(mockNotifications);
+  const [toast, setToast] = useState(null);
 
-  return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-surface-container/70 dark:bg-surface-container-low/70 backdrop-blur-xl border-b border-white/10 shadow-sm flex justify-between items-center px-4 h-16">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-          <span className="material-symbols-outlined text-primary text-xl">eco</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="font-bold text-lg text-primary tracking-tight leading-none mt-1">CloudLeaf</span>
-          <div className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span>
-            <span className="text-[10px] uppercase font-bold tracking-widest text-on-surface-variant">AWS Prod</span>
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors active:scale-95 transition-transform">
-          <span className="material-symbols-outlined text-primary">notifications</span>
-        </button>
-        <div className="w-8 h-8 rounded-full border border-primary/20 p-0.5">
-          <div className="w-full h-full rounded-full bg-surface-container-highest flex items-center justify-center">
-            <span className="material-symbols-outlined text-sm text-primary">person</span>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-}
+  // Notification handlers
+  const handleMarkAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  };
 
-function BottomNav() {
-  const location = useLocation();
-  if (location.pathname === '/') return null;
+  const handleMarkRead = (id) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
+    );
+  };
 
-  const getNavClass = (path) => {
-    return location.pathname === path
-      ? "flex flex-col items-center justify-center text-primary-container bg-primary/10 rounded-xl px-4 py-1"
-      : "flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors";
+  const showToast = (toastObj) => {
+    setToast(toastObj);
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container-low/80 dark:bg-surface-container-lowest/80 backdrop-blur-2xl border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.3)] rounded-t-xl">
-      <Link to="/dashboard" className={getNavClass('/dashboard')}>
-        <span className="material-symbols-outlined" style={{ fontVariationSettings: location.pathname === '/dashboard' ? "'FILL' 1" : "'FILL' 0" }}>dashboard</span>
-        <span className="text-[10px] font-semibold mt-1">Dashboard</span>
-      </Link>
-      <Link to="/action-center" className={getNavClass('/action-center')}>
-        <span className="material-symbols-outlined" style={{ fontVariationSettings: location.pathname === '/action-center' ? "'FILL' 1" : "'FILL' 0" }}>bolt</span>
-        <span className="text-[10px] font-semibold mt-1">Actions</span>
-      </Link>
-      <Link to="/report" className={getNavClass('/report')}>
-        <span className="material-symbols-outlined" style={{ fontVariationSettings: location.pathname === '/report' ? "'FILL' 1" : "'FILL' 0" }}>eco</span>
-        <span className="text-[10px] font-semibold mt-1">Report</span>
-      </Link>
-    </nav>
+    <BrowserRouter>
+      <div className="min-h-screen bg-background text-on-surface flex flex-col selection:bg-primary-fixed selection:text-on-primary-fixed">
+        {/* Top Sticky Header */}
+        <Header
+          notifications={notifications}
+          onMarkAllRead={handleMarkAllRead}
+          onMarkRead={handleMarkRead}
+        />
+
+        {/* Main Content Area */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-16 md:mb-6">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/action-center" element={<ActionCenter onShowToast={showToast} />} />
+            <Route path="/report" element={<Report onShowToast={showToast} />} />
+            <Route path="/settings" element={<Settings onShowToast={showToast} />} />
+            <Route path="/connect" element={<ConnectWizard onShowToast={showToast} />} />
+          </Routes>
+        </main>
+
+        {/* Floating Chatbot Assistant Shell (Task 7) */}
+        <ChatbotShell />
+
+        {/* Mobile Bottom Navigation (Task 8) */}
+        <BottomNav />
+
+        {/* System Toast Feedback (Task 9) */}
+        <Toast toast={toast} onClose={() => setToast(null)} />
+      </div>
+    </BrowserRouter>
   );
 }
-
-function Layout({ children }) {
-  const location = useLocation();
-  const isWizard = location.pathname === '/';
-  
-  return (
-    <div className="app-container min-h-screen pb-24">
-      <Header />
-      {children}
-      <BottomNav />
-    </div>
-  );
-}
-
-function App() {
-  return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<ConnectWizard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/action-center" element={<ActionCenter />} />
-          <Route path="/report" element={<Report />} />
-        </Routes>
-      </Layout>
-    </Router>
-  );
-}
-
-export default App;

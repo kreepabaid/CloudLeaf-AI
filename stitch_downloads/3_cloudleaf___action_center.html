@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudLeaf | Optimization Queue</title>
+<!-- Google Fonts: Geist for Headlines, Inter for Body -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-bright": "#fcf9f2",
+                    "primary-fixed": "#a8f2cc",
+                    "secondary": "#795919",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e5e2dc",
+                    "outline": "#6f7973",
+                    "on-primary-fixed-variant": "#005237",
+                    "on-background": "#1c1c18",
+                    "surface-container": "#f0eee7",
+                    "inverse-on-surface": "#f3f0ea",
+                    "surface-container-low": "#f6f3ed",
+                    "on-surface": "#1c1c18",
+                    "secondary-container": "#fdd185",
+                    "inverse-primary": "#8cd6b1",
+                    "surface-dim": "#dcdad4",
+                    "primary-fixed-dim": "#8cd6b1",
+                    "primary": "#005237",
+                    "error": "#ba1a1a",
+                    "on-primary-container": "#9ee9c3",
+                    "secondary-container": "#fdd185",
+                    "on-secondary-container": "#785818",
+                    "outline-variant": "#bfc9c1",
+                    "tertiary": "#005231",
+                    "tertiary-container": "#046d43"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "8px",
+                    "container-max": "1440px",
+                    "stack-lg": "48px",
+                    "stack-sm": "12px",
+                    "stack-md": "24px",
+                    "gutter": "24px",
+                    "margin-desktop": "48px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Geist"],
+                    "number-display": ["Geist"],
+                    "headline-md": ["Geist"],
+                    "label-caps": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg-mobile": ["Geist"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "number-display": ["36px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "500"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "display-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(107, 101, 88, 0.15);
+            box-shadow: 0 24px 48px -12px rgba(42, 42, 38, 0.04);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 32px 64px -12px rgba(42, 42, 38, 0.08);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+        }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-surface-bright text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 bg-white/60 dark:bg-on-background/60 backdrop-blur-xl border-b border-outline-variant/15 shadow-sm shadow-secondary/5">
+<div class="flex items-center gap-4">
+<span class="font-display-lg text-display-lg-mobile font-semibold text-primary dark:text-primary-fixed-dim">CloudLeaf</span>
+</div>
+<div class="flex items-center gap-6">
+<button class="material-symbols-outlined text-on-surface-variant/70 hover:bg-primary-container/10 p-2 rounded-full transition-all active:scale-90">notifications</button>
+<div class="w-10 h-10 rounded-full bg-surface-container overflow-hidden border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female technologist with a warm, minimalist aesthetic. Soft morning light illuminates her face against a backdrop of a clean, modern office with lush green plants. The image is crisp and uses a high-end editorial color grade with sage and ivory tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFStCGxmcPfQGCdTnRj5m0uCH0_nbnOKevx2d_0_chJpzTfWM0GemW_mQM0DmDbMnR6--UARNu51n5FXU8yzr7Coxlu9yF5zDyg_56U8YtJYTwwGMO8zSl9Z2Mnep-dISKPlPEBRyia3mX1MzU2U-duWgsAko-Mg1ilblh7z4pel2LGt68LdkmI8N_S2I4w8gPjIzchOMojWDBqcK51yyYT_Jj0BWf454hJ_Vwd2d4NF18zL1RXtvZ"/>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<!-- Header Section -->
+<header class="mb-stack-lg flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary mb-2">Optimization Queue</h1>
+<p class="text-on-surface-variant/80 font-body-lg max-w-2xl">High-precision AI interventions to align your infrastructure with regenerative growth targets.</p>
+</div>
+<div class="flex items-center gap-3 bg-surface-container/50 p-1 rounded-xl border border-outline-variant/10">
+<button class="px-4 py-2 rounded-lg bg-white shadow-sm font-label-caps text-primary text-label-caps">PENDING (8)</button>
+<button class="px-4 py-2 rounded-lg font-label-caps text-on-surface-variant text-label-caps hover:bg-white/40 transition-colors">HISTORY</button>
+</div>
+</header>
+<!-- Optimization Grid (Bento style for top highlights, then stack) -->
+<div class="space-y-stack-md">
+<!-- Card 1: High Risk / High Impact -->
+<div class="glass-card rounded-2xl overflow-hidden flex flex-col md:flex-row">
+<div class="p-base md:p-8 flex-grow flex flex-col md:flex-row gap-6">
+<!-- Icon & Title Section -->
+<div class="flex-shrink-0">
+<div class="w-14 h-14 rounded-full bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'wght' 300;">cloud_off</span>
+</div>
+</div>
+<div class="flex-grow space-y-4">
+<div class="flex flex-wrap items-start justify-between gap-3">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Decommission Idle DB Cluster</h3>
+<p class="text-on-surface-variant font-body-md">staging-us-east-4-aurora is showing zero active connections.</p>
+</div>
+<div class="flex gap-2">
+<span class="px-3 py-1 rounded-full bg-[#fceceb] text-[#ba1a1a] font-label-caps text-[10px] tracking-wider uppercase flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#ba1a1a] animate-pulse"></span> Risk: High
+                                </span>
+<span class="px-3 py-1 rounded-full bg-secondary-container/30 text-secondary font-label-caps text-[10px] tracking-wider uppercase">
+                                    98% Confidence
+                                </span>
+</div>
+</div>
+<div class="bg-surface-container-low/50 p-4 rounded-xl border border-outline-variant/10 italic text-on-surface-variant font-body-md">
+                            "Flagged due to persistent low CPU utilization (&lt;5%) over 30 days."
+                        </div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+<div>
+<p class="font-label-caps text-label-caps text-outline mb-1 uppercase">Monthly Savings</p>
+<p class="font-number-display text-2xl text-primary">$1,240.00</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-outline mb-1 uppercase">Carbon Cut</p>
+<p class="font-number-display text-2xl text-primary">42.5 <span class="text-sm">kg CO2e</span></p>
+</div>
+<div class="md:col-span-2 flex items-center">
+<span class="px-4 py-1.5 rounded-lg border border-outline-variant/40 text-on-surface-variant font-label-caps text-[11px] uppercase tracking-widest">
+                                    Awaiting Approval
+                                </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Split Sidebar -->
+<div class="flex md:flex-col border-t md:border-t-0 md:border-l border-outline-variant/15 w-full md:w-32">
+<button class="flex-1 p-6 flex flex-col items-center justify-center gap-2 hover:bg-primary/5 transition-colors group">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">check_circle</span>
+<span class="font-label-caps text-label-caps text-primary">Approve</span>
+</button>
+<button class="flex-1 p-6 flex flex-col items-center justify-center gap-2 hover:bg-error/5 transition-colors group border-l md:border-l-0 md:border-t border-outline-variant/15">
+<span class="material-symbols-outlined text-outline group-hover:scale-110 transition-transform">close</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Dismiss</span>
+</button>
+</div>
+</div>
+<!-- Card 2: Auto-Approved -->
+<div class="glass-card rounded-2xl overflow-hidden flex flex-col md:flex-row opacity-90">
+<div class="p-base md:p-8 flex-grow flex flex-col md:flex-row gap-6">
+<div class="flex-shrink-0">
+<div class="w-14 h-14 rounded-full bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">memory</span>
+</div>
+</div>
+<div class="flex-grow space-y-4">
+<div class="flex flex-wrap items-start justify-between gap-3">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Right-size EC2 Instance Fleet</h3>
+<p class="text-on-surface-variant font-body-md">Downscaling 12 nodes from m5.xlarge to m5.large based on throughput trends.</p>
+</div>
+<div class="flex gap-2">
+<span class="px-3 py-1 rounded-full bg-primary/10 text-primary font-label-caps text-[10px] tracking-wider uppercase">
+                                    Risk: Low
+                                </span>
+<span class="px-3 py-1 rounded-full bg-secondary-container/30 text-secondary font-label-caps text-[10px] tracking-wider uppercase">
+                                    92% Confidence
+                                </span>
+</div>
+</div>
+<div class="bg-surface-container-low/50 p-4 rounded-xl border border-outline-variant/10 italic text-on-surface-variant font-body-md">
+                            "Flagged due to persistent low CPU utilization (&lt;5%) over 30 days."
+                        </div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+<div>
+<p class="font-label-caps text-label-caps text-outline mb-1 uppercase">Monthly Savings</p>
+<p class="font-number-display text-2xl text-primary">$450.00</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-outline mb-1 uppercase">Carbon Cut</p>
+<p class="font-number-display text-2xl text-primary">18.2 <span class="text-sm">kg CO2e</span></p>
+</div>
+<div class="md:col-span-2 flex items-center">
+<span class="px-4 py-1.5 rounded-lg bg-secondary-container/20 text-secondary font-label-caps text-[11px] uppercase tracking-widest flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">bolt</span> Auto-Approved
+                                </span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex md:flex-col border-t md:border-t-0 md:border-l border-outline-variant/15 w-full md:w-32 bg-surface-container/20">
+<div class="flex-1 p-6 flex flex-col items-center justify-center gap-1 opacity-40 grayscale">
+<span class="material-symbols-outlined text-outline">verified</span>
+<span class="font-label-caps text-[10px] uppercase">Executed</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Medium Risk -->
+<div class="glass-card rounded-2xl overflow-hidden flex flex-col md:flex-row">
+<div class="p-base md:p-8 flex-grow flex flex-col md:flex-row gap-6">
+<div class="flex-shrink-0">
+<div class="w-14 h-14 rounded-full bg-primary/5 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl">storage</span>
+</div>
+</div>
+<div class="flex-grow space-y-4">
+<div class="flex flex-wrap items-start justify-between gap-3">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-1">Archive S3 Legacy Objects</h3>
+<p class="text-on-surface-variant font-body-md">Transition 4.2TB of data older than 180 days to Glacier Deep Archive.</p>
+</div>
+<div class="flex gap-2">
+<span class="px-3 py-1 rounded-full bg-[#fef4e2] text-[#795919] font-label-caps text-[10px] tracking-wider uppercase">
+                                    Risk: Medium
+                                </span>
+<span class="px-3 py-1 rounded-full bg-secondary-container/30 text-secondary font-label-caps text-[10px] tracking-wider uppercase">
+                                    99% Confidence
+                                </span>
+</div>
+</div>
+<div class="bg-surface-container-low/50 p-4 rounded-xl border border-outline-variant/10 italic text-on-surface-variant font-body-md">
+                            "Flagged due to persistent low CPU utilization (&lt;5%) over 30 days."
+                        </div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+<div>
+<p class="font-label-caps text-label-caps text-outline mb-1 uppercase">Monthly Savings</p>
+<p class="font-number-display text-2xl text-primary">$180.50</p>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-outline mb-1 uppercase">Carbon Cut</p>
+<p class="font-number-display text-2xl text-primary">5.8 <span class="text-sm">kg CO2e</span></p>
+</div>
+<div class="md:col-span-2 flex items-center">
+<span class="px-4 py-1.5 rounded-lg border border-outline-variant/40 text-on-surface-variant font-label-caps text-[11px] uppercase tracking-widest">
+                                    Awaiting Approval
+                                </span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex md:flex-col border-t md:border-t-0 md:border-l border-outline-variant/15 w-full md:w-32">
+<button class="flex-1 p-6 flex flex-col items-center justify-center gap-2 hover:bg-primary/5 transition-colors group">
+<span class="material-symbols-outlined text-primary">check_circle</span>
+<span class="font-label-caps text-label-caps text-primary">Approve</span>
+</button>
+<button class="flex-1 p-6 flex flex-col items-center justify-center gap-2 hover:bg-error/5 transition-colors group border-l md:border-l-0 md:border-t border-outline-variant/15">
+<span class="material-symbols-outlined text-outline">close</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Dismiss</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-3 px-margin-mobile bg-surface/80 backdrop-blur-lg border-t border-outline-variant/15 shadow-[0_-4px_24px_rgba(42,42,38,0.04)] rounded-t-xl">
+<!-- Dashboard -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-label-caps mt-1">Dashboard</span>
+</a>
+<!-- Actions (ACTIVE) -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim scale-95 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-label-caps text-label-caps mt-1">Actions</span>
+</a>
+<!-- Report -->
+<a class="flex flex-col items-center justify-center text-outline dark:text-outline-variant hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-caps text-label-caps mt-1">Report</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for buttons
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.classList.add('scale-95');
+                setTimeout(() => this.classList.remove('scale-95'), 100);
+            });
+        });
+    </script>
+</body></html>

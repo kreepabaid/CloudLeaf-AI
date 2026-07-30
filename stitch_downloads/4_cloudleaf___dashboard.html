@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CloudLeaf - Digital Tranquility</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-bright": "#fcf9f2",
+                "primary-fixed": "#a8f2cc",
+                "secondary": "#795919",
+                "on-primary": "#ffffff",
+                "surface-variant": "#e5e2dc",
+                "outline": "#6f7973",
+                "on-primary-fixed-variant": "#005237",
+                "on-background": "#1c1c18",
+                "surface-container": "#f0eee7",
+                "inverse-on-surface": "#f3f0ea",
+                "surface-container-low": "#f6f3ed",
+                "on-surface": "#1c1c18",
+                "secondary-container": "#fdd185",
+                "inverse-primary": "#8cd6b1",
+                "surface-dim": "#dcdad4",
+                "primary-fixed-dim": "#8cd6b1",
+                "primary": "#005237",
+                "error": "#ba1a1a",
+                "on-primary-container": "#9ee9c3",
+                "secondary-container": "#fdd185",
+                "inverse-primary": "#8cd6b1",
+                "primary": "#005237",
+                "error": "#ba1a1a",
+                "on-primary-container": "#9ee9c3",
+                "secondary-fixed-dim": "#ebc076",
+                "on-secondary-fixed-variant": "#5e4100",
+                "surface-container-lowest": "#ffffff",
+                "error-container": "#ffdad6",
+                "tertiary-fixed": "#9df5bf",
+                "tertiary": "#005231",
+                "on-tertiary-fixed-variant": "#005230",
+                "on-tertiary-container": "#94ecb6",
+                "on-secondary-fixed": "#271900",
+                "surface-tint": "#1f6b4d",
+                "surface-container-high": "#ebe8e1",
+                "on-tertiary": "#ffffff",
+                "on-primary-fixed": "#002114",
+                "on-error-container": "#93000a",
+                "on-secondary-container": "#785818",
+                "on-error": "#ffffff",
+                "inverse-surface": "#31312c",
+                "tertiary-fixed-dim": "#81d8a4",
+                "on-tertiary-fixed": "#002111",
+                "surface-container-highest": "#e5e2dc",
+                "surface": "#fcf9f2",
+                "outline-variant": "#bfc9c1",
+                "secondary-fixed": "#ffdea9",
+                "background": "#fcf9f2",
+                "on-surface-variant": "#3f4943",
+                "on-secondary": "#ffffff",
+                "primary-container": "#1f6b4d",
+                "tertiary-container": "#046d43"
+            },
+            "spacing": {
+                "base": "8px",
+                "container-max": "1440px",
+                "stack-lg": "48px",
+                "stack-sm": "12px",
+                "stack-md": "24px",
+                "gutter": "24px",
+                "margin-desktop": "48px",
+                "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                "display-lg": ["Geist"],
+                "number-display": ["Geist"],
+                "headline-md": ["Geist"],
+                "label-caps": ["Inter"],
+                "body-lg": ["Inter"],
+                "body-md": ["Inter"],
+                "display-lg-mobile": ["Geist"]
+            },
+            "fontSize": {
+                "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                "number-display": ["36px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "400" }],
+                "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "500" }],
+                "label-caps": ["12px", { "lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                "display-lg-mobile": ["32px", { "lineHeight": "1.2", "fontWeight": "600" }]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(107, 101, 88, 0.15);
+        }
+        
+        .area-gradient {
+            fill: url(#sageGradient);
+            fill-opacity: 0.15;
+        }
+
+        .chart-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: dash 3s ease-out forwards;
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: 0; }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 82, 55, 0.1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Top Navigation Bar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 bg-white/60 dark:bg-on-background/60 backdrop-blur-xl border-b border-outline-variant/15 shadow-sm shadow-secondary/5">
+<div class="flex items-center gap-6">
+<span class="font-display-lg text-display-lg-mobile md:text-display-lg font-semibold text-primary dark:text-primary-fixed-dim">CloudLeaf</span>
+<div class="hidden md:flex items-center px-3 py-1 rounded-full bg-secondary-container/20 border border-secondary/20 gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-caps text-secondary text-[10px]">AWS PROD</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined p-2 text-on-surface-variant hover:bg-primary-container/10 transition-colors duration-300 rounded-full">notifications</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant/30 hover:scale-95 transition-transform cursor-pointer">
+<img class="w-full h-full object-cover" data-alt="A professional, high-resolution portrait of a tech executive in a brightly lit, minimalist studio. The lighting is soft and flattering, highlighting the person's friendly yet authoritative expression. The background is a clean, ivory-toned wall that aligns perfectly with a premium, boutique sustainability aesthetic. The overall mood is calm, modern, and high-end." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZxfiiRbXdOAdUXEZSPKYrcCu3JoutkLg9JdAdaUyoVocKIDB3rZklHLmVTFFP4AbfiZHRWEG6nHrxgSxN6O-T48EZqsQ4LzlDd5nWhCuLZtJAajUhySNV4pEL-d0qDjwJqVCBKYOBCO1h1eLxVVuB9Ivc_AsLPt0AnXMPsvD8EuvY27a2bVCA5GUFbHBvXB5gdylRdG1iufls1Ftv_spUCWrH_IGxXdwDzKtAkvWVqYEA4-7QvX0b"/>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="pt-28 pb-32 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+<!-- Header Section -->
+<header class="mb-stack-lg">
+<h1 class="font-display-lg text-display-lg-mobile md:text-display-lg text-primary tracking-tight">Digital Tranquility</h1>
+<p class="font-body-lg text-on-surface-variant/80 mt-2">Sustainable cloud optimization, harmonized for your infrastructure.</p>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- KPI Glass Cards -->
+<div class="md:col-span-6 glass-card rounded-xl p-base md:p-8 flex items-center justify-between shadow-sm">
+<div>
+<span class="font-label-caps text-on-surface-variant/70 uppercase tracking-widest block mb-2">Cost Run-Rate</span>
+<div class="flex items-baseline gap-2">
+<span class="font-number-display text-[42px] text-on-surface">$12,480</span>
+<span class="text-on-surface-variant/60">/mo</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-2">
+<div class="px-3 py-1 rounded-full bg-primary-fixed/30 text-primary font-label-caps flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+                        12%
+                    </div>
+<span class="text-[10px] text-on-surface-variant/50 font-label-caps uppercase">vs last month</span>
+</div>
+</div>
+<div class="md:col-span-6 glass-card rounded-xl p-base md:p-8 flex items-center justify-between shadow-sm">
+<div>
+<span class="font-label-caps text-on-surface-variant/70 uppercase tracking-widest block mb-2">Carbon Footprint</span>
+<div class="flex items-baseline gap-2">
+<span class="font-number-display text-[42px] text-on-surface">1.84</span>
+<span class="text-on-surface-variant/60">CO2e (t)</span>
+</div>
+</div>
+<div class="flex flex-col items-end gap-2">
+<div class="px-3 py-1 rounded-full bg-primary-fixed/30 text-primary font-label-caps flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+                        18%
+                    </div>
+<span class="text-[10px] text-on-surface-variant/50 font-label-caps uppercase">vs last month</span>
+</div>
+</div>
+<!-- Forecast Main Chart -->
+<div class="md:col-span-12 glass-card rounded-xl p-8 shadow-sm">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-md text-primary">Sustainability Forecast</h2>
+<div class="flex bg-surface-container-low p-1 rounded-lg">
+<button class="px-4 py-1.5 rounded-md text-primary bg-white shadow-sm font-label-caps transition-all">CPU</button>
+<button class="px-4 py-1.5 rounded-md text-on-surface-variant/60 font-label-caps hover:text-primary transition-all">MEMORY</button>
+<button class="px-4 py-1.5 rounded-md text-on-surface-variant/60 font-label-caps hover:text-primary transition-all">TRAFFIC</button>
+<button class="px-4 py-1.5 rounded-md text-on-surface-variant/60 font-label-caps hover:text-primary transition-all">COST</button>
+</div>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant/60 font-label-caps">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span> Historical
+                        </div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full border-2 border-dashed border-secondary"></span> Today
+                        </div>
+</div>
+</div>
+<div class="relative h-[300px] w-full overflow-hidden">
+<svg class="w-full h-full preserve-3d" preserveaspectratio="none" viewbox="0 0 1000 300">
+<defs>
+<lineargradient id="sageGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#005237" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="#005237" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<!-- Grid Lines -->
+<line stroke="#6f7973" stroke-dasharray="4" stroke-opacity="0.1" x1="0" x2="1000" y1="250" y2="250"></line>
+<line stroke="#6f7973" stroke-dasharray="4" stroke-opacity="0.1" x1="0" x2="1000" y1="150" y2="150"></line>
+<line stroke="#6f7973" stroke-dasharray="4" stroke-opacity="0.1" x1="0" x2="1000" y1="50" y2="50"></line>
+<!-- Area Chart -->
+<path class="area-gradient" d="M0,280 Q250,220 400,180 Q600,140 1000,120 L1000,300 L0,300 Z"></path>
+<path class="chart-path" d="M0,280 Q250,220 400,180 Q600,140 1000,120" fill="none" stroke="#005237" stroke-width="3"></path>
+<!-- Today Marker -->
+<line stroke="#795919" stroke-dasharray="8,4" stroke-width="2" x1="400" x2="400" y1="0" y2="300"></line>
+<circle cx="400" cy="180" fill="#795919" r="6"></circle>
+</svg>
+<div class="absolute top-2 left-[390px] -translate-x-1/2 bg-secondary text-white px-2 py-0.5 rounded text-[10px] font-label-caps">NOW</div>
+</div>
+</div>
+<!-- Carbon Breakdown Card -->
+<div class="md:col-span-7 glass-card rounded-xl p-8 shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-headline-md text-primary">Carbon Breakdown</h3>
+<button class="material-symbols-outlined text-on-surface-variant/50 hover:text-primary transition-colors">info</button>
+</div>
+<div class="grid grid-cols-3 gap-6 mb-10">
+<div class="text-center">
+<span class="text-[10px] font-label-caps text-on-surface-variant/60 uppercase block mb-1">Consumption</span>
+<div class="font-number-display text-[20px]">4.2 kWh</div>
+</div>
+<div class="text-center border-x border-outline-variant/20">
+<span class="text-[10px] font-label-caps text-on-surface-variant/60 uppercase block mb-1">Duration</span>
+<div class="font-number-display text-[20px]">720 hrs</div>
+</div>
+<div class="text-center">
+<span class="text-[10px] font-label-caps text-on-surface-variant/60 uppercase block mb-1">Carbon Factor</span>
+<div class="font-number-display text-[20px]">0.32 kg</div>
+</div>
+</div>
+<div class="space-y-6">
+<div class="relative pt-1">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-caps text-on-surface-variant">Current Footprint</span>
+<span class="font-label-caps text-on-surface">1.84 t</span>
+</div>
+<div class="overflow-hidden h-2 text-xs flex rounded bg-surface-container-high">
+<div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary" style="width:75%"></div>
+</div>
+</div>
+<div class="relative pt-1">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-caps text-on-surface-variant">Projected (Optimized)</span>
+<span class="font-label-caps text-on-surface">1.42 t</span>
+</div>
+<div class="overflow-hidden h-2 text-xs flex rounded bg-surface-container-high">
+<div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary-fixed-dim" style="width:55%"></div>
+</div>
+</div>
+<div class="mt-8 p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-center gap-4">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">eco</span>
+<div>
+<p class="font-body-md text-primary font-semibold">Saved this quarter: 0.42 t CO2e</p>
+<p class="text-[12px] text-on-surface-variant/70">Equivalent to planting 7 young trees.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Insights Feed -->
+<div class="md:col-span-5 glass-card rounded-xl flex flex-col shadow-sm max-h-[500px]">
+<div class="p-8 pb-4 border-b border-outline-variant/10">
+<h3 class="font-headline-md text-primary">Intelligence Feed</h3>
+</div>
+<div class="overflow-y-auto p-4 space-y-4 custom-scrollbar">
+<!-- Recommendation Card 1 -->
+<div class="p-5 bg-white/40 border border-outline-variant/15 rounded-xl hover:shadow-md transition-all group cursor-pointer">
+<div class="flex justify-between items-start mb-3">
+<span class="px-2 py-0.5 rounded bg-secondary-container/30 text-secondary text-[10px] font-label-caps">COMPUTE</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant/40 group-hover:text-primary transition-colors">arrow_forward</span>
+</div>
+<h4 class="font-body-md font-semibold text-on-surface mb-1">Right-size RDS instance 'db-prod-01'</h4>
+<p class="text-[13px] text-on-surface-variant/80">Average CPU is &lt;15%. Downgrade to db.t4g.medium to save $84/mo.</p>
+</div>
+<!-- Recommendation Card 2 -->
+<div class="p-5 bg-white/40 border border-outline-variant/15 rounded-xl hover:shadow-md transition-all group cursor-pointer">
+<div class="flex justify-between items-start mb-3">
+<span class="px-2 py-0.5 rounded bg-primary-fixed/30 text-primary text-[10px] font-label-caps">STORAGE</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant/40 group-hover:text-primary transition-colors">arrow_forward</span>
+</div>
+<h4 class="font-body-md font-semibold text-on-surface mb-1">Lifecycle policy for S3 bucket 'logs'</h4>
+<p class="text-[13px] text-on-surface-variant/80">Move 1.2TB of stale data to Glacier Deep Archive for 92% cost reduction.</p>
+</div>
+<!-- Recommendation Card 3 -->
+<div class="p-5 bg-white/40 border border-outline-variant/15 rounded-xl hover:shadow-md transition-all group cursor-pointer opacity-70">
+<div class="flex justify-between items-start mb-3">
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant text-[10px] font-label-caps">NETWORK</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant/40 group-hover:text-primary transition-colors">arrow_forward</span>
+</div>
+<h4 class="font-body-md font-semibold text-on-surface mb-1">Orphaned EIP address detected</h4>
+<p class="text-[13px] text-on-surface-variant/80">Address 52.1.24.8 is not associated with any instance. Release to save.</p>
+</div>
+</div>
+<div class="p-4 bg-primary/5 mt-auto rounded-b-xl text-center">
+<button class="text-primary font-label-caps text-[11px] hover:underline">VIEW ALL RECOMMENDATIONS</button>
+</div>
+</div>
+<!-- Historical Trends -->
+<div class="md:col-span-12 glass-card rounded-xl p-8 shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-headline-md text-primary">Historical Harmonization</h3>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<span class="w-8 h-0.5 bg-primary"></span>
+<span class="font-label-caps text-[10px] text-on-surface-variant/70 uppercase">Sustainability Score</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-8 h-0.5 bg-secondary"></span>
+<span class="font-label-caps text-[10px] text-on-surface-variant/70 uppercase">Cost Efficiency</span>
+</div>
+</div>
+</div>
+<div class="h-48 w-full">
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 1000 200">
+<!-- Dual Lines -->
+<path d="M0,150 Q100,140 200,160 Q300,120 400,100 Q500,110 600,70 Q700,80 800,40 Q900,50 1000,20" fill="none" stroke="#005237" stroke-width="2"></path>
+<path d="M0,180 Q100,170 200,175 Q300,140 400,145 Q500,130 600,120 Q700,100 800,85 Q900,70 1000,65" fill="none" stroke="#795919" stroke-dasharray="4,2" stroke-width="2"></path>
+<!-- Axis Labels (Faked) -->
+<text fill="#6f7973" font-family="Inter" font-size="10" x="10" y="195">JAN</text>
+<text fill="#6f7973" font-family="Inter" font-size="10" x="250" y="195">APR</text>
+<text fill="#6f7973" font-family="Inter" font-size="10" x="500" y="195">JUL</text>
+<text fill="#6f7973" font-family="Inter" font-size="10" x="750" y="195">OCT</text>
+<text fill="#6f7973" font-family="Inter" font-size="10" x="960" y="195">DEC</text>
+</svg>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center py-3 px-margin-mobile bg-surface/80 backdrop-blur-lg border-t border-outline-variant/15 shadow-[0_-4px_24px_rgba(42,42,38,0.04)] rounded-t-xl">
+<button class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-caps text-[10px] mt-1">Dashboard</span>
+</button>
+<button class="flex flex-col items-center justify-center text-outline dark:text-outline-variant hover:opacity-80 transition-opacity active:scale-95">
+<span class="material-symbols-outlined">bolt</span>
+<span class="font-label-caps text-[10px] mt-1">Actions</span>
+</button>
+<button class="flex flex-col items-center justify-center text-outline dark:text-outline-variant hover:opacity-80 transition-opacity active:scale-95">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-caps text-[10px] mt-1">Report</span>
+</button>
+</nav>
+<!-- Micro-interaction Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Simple hover lift effect for cards
+            const cards = document.querySelectorAll('.glass-card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.transform = 'translateY(-4px)';
+                    card.style.boxShadow = '0 12px 24px rgba(42, 42, 38, 0.08)';
+                    card.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'translateY(0)';
+                    card.style.boxShadow = '0 1px 3px rgba(42, 42, 38, 0.04)';
+                });
+            });
+
+            // Smooth tab switching simulation
+            const tabButtons = document.querySelectorAll('.md\\:col-span-12 button');
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabButtons.forEach(b => {
+                        b.classList.remove('bg-white', 'shadow-sm', 'text-primary');
+                        b.classList.add('text-on-surface-variant/60');
+                    });
+                    btn.classList.add('bg-white', 'shadow-sm', 'text-primary');
+                    btn.classList.remove('text-on-surface-variant/60');
+                });
+            });
+        });
+    </script>
+</body></html>
