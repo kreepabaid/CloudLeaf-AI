@@ -28,11 +28,32 @@ import {
 } from 'recharts';
 import MetricCard from '../components/MetricCard';
 import ShimmerSkeleton from '../components/ShimmerSkeleton';
-import { 
-  forecastData, 
-  historicalTrendsData, 
-  carbonBreakdownData 
-} from '../data/mockData';
+
+// TODO: replace with real per-instance carbon breakdown and forecast once backend supports it
+const forecastData = [
+  { month: 'Feb', cost: 1450, baselineCost: 1800, cpu: 42, memory: 55, traffic: 12.4 },
+  { month: 'Mar', cost: 1380, baselineCost: 1820, cpu: 39, memory: 52, traffic: 13.1 },
+  { month: 'Apr', cost: 1290, baselineCost: 1850, cpu: 35, memory: 48, traffic: 14.0 },
+  { month: 'May', cost: 1180, baselineCost: 1880, cpu: 31, memory: 44, traffic: 14.8 },
+  { month: 'Jun', cost: 1050, baselineCost: 1910, cpu: 28, memory: 41, traffic: 15.5 },
+  { month: 'Jul', cost: 920, baselineCost: 1950, cpu: 25, memory: 38, traffic: 16.2 },
+];
+
+// TODO: replace with real per-instance carbon breakdown and forecast once backend supports it
+const carbonBreakdownData = {
+  powerConsumptionKw: 2.85,
+  runningHours: 720,
+  regionalCarbonFactor: 0.385,
+  formulaExplanation: '(2.85 kW × 720 hrs × 0.385 kg CO2/kWh)',
+  currentCarbonKg: 790,
+  projectedCarbonKg: 264,
+  monthlySavedKg: 526,
+  regionMix: [
+    { region: 'us-east-1 (N. Virginia)', factor: '0.385 kg/kWh', color: '#005237' },
+    { region: 'eu-west-1 (Ireland)', factor: '0.295 kg/kWh', color: '#1f6b4d' },
+    { region: 'ap-south-1 (Mumbai)', factor: '0.708 kg/kWh', color: '#ba1a1a' },
+  ],
+};
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -47,6 +68,7 @@ export default function Dashboard() {
     autoApprovalCount: 0,
     awaitingApprovalCount: 0,
   });
+  const [historicalTrends, setHistoricalTrends] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [forecastTab, setForecastTab] = useState('cost'); // 'cost' | 'cpu' | 'memory' | 'traffic'
@@ -56,27 +78,31 @@ export default function Dashboard() {
       setIsLoading(true);
       setError(null);
       try {
-        const [metricsRes, insightsRes] = await Promise.all([
+        const [metricsRes, insightsRes, reportsRes] = await Promise.all([
           fetch('http://127.0.0.1:8000/api/metrics'),
           fetch('http://127.0.0.1:8000/api/insights'),
+          fetch('http://127.0.0.1:8000/api/reports/summary'),
         ]);
 
-        if (!metricsRes.ok || !insightsRes.ok) {
+        if (!metricsRes.ok || !insightsRes.ok || !reportsRes.ok) {
           throw new Error('Could not connect to backend');
         }
 
         const metricsData = await metricsRes.json();
         const insightsData = await insightsRes.json();
+        const reportsData = await reportsRes.json();
 
         const insightsList = insightsData.insights || [];
         const metricsList = metricsData.metrics || [];
+        const currentStats = reportsData.current_stats || {};
+        const historicalTrendsDataList = reportsData.historical_trends || [];
 
-        const totalResourcesAudited = metricsData.count ?? metricsList.length;
-        const activeInsightsCount = insightsData.count ?? insightsList.length;
-        const autoApprovalCount = insightsList.filter(
+        const totalResourcesAudited = currentStats.totalResourcesAudited ?? metricsData.count ?? metricsList.length;
+        const activeInsightsCount = currentStats.activeInsightsCount ?? insightsData.count ?? insightsList.length;
+        const autoApprovalCount = currentStats.autoApprovalCount ?? insightsList.filter(
           (item) => item.validation?.decision === 'auto_approve'
         ).length;
-        const awaitingApprovalCount = insightsList.filter(
+        const awaitingApprovalCount = currentStats.awaitingApprovalCount ?? insightsList.filter(
           (item) => item.validation?.decision === 'needs_approval'
         ).length;
 
@@ -84,8 +110,8 @@ export default function Dashboard() {
           (acc, item) => acc + (item.insight?.estimated_savings_usd || 0),
           0
         );
-        const monthlyCostSaved = calculatedSavings > 0 ? calculatedSavings : 3850;
-        const monthlyCarbonSaved = Math.round(monthlyCostSaved * 0.37);
+        const monthlyCostSaved = currentStats.monthlyCostSaved ?? (calculatedSavings > 0 ? calculatedSavings : 3850);
+        const monthlyCarbonSaved = currentStats.monthlyCarbonSaved ?? Math.round(monthlyCostSaved * 0.37);
 
         setStats({
           monthlyCarbonSaved,
@@ -99,6 +125,8 @@ export default function Dashboard() {
           autoApprovalCount,
           awaitingApprovalCount,
         });
+
+        setHistoricalTrends(historicalTrendsDataList);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Could not connect to backend');
@@ -471,7 +499,7 @@ export default function Dashboard() {
 
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={historicalTrendsData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <BarChart data={historicalTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107, 101, 88, 0.15)" />
               <XAxis dataKey="period" stroke="#6f7973" tick={{ fontSize: 11 }} />
               <YAxis stroke="#6f7973" tick={{ fontSize: 11 }} />
