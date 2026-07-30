@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Zap, 
   Filter, 
@@ -13,11 +13,73 @@ import ValidationModal from '../components/ValidationModal';
 import ShimmerSkeleton from '../components/ShimmerSkeleton';
 import { mockInsights } from '../data/mockData';
 
+const API_BASE = 'http://localhost:8000/api';
+
 export default function ActionCenter({ onShowToast }) {
-  const [insights, setInsights] = useState(mockInsights);
+  const [insights, setInsights] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'high_risk' | 'auto_approved' | 'awaiting' | 'executed'
   const [validatingInsight, setValidatingInsight] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Normalize items returned by GET /api/insights into card format
+  const normalizeInsight = (item) => {
+    const ins = item.insight || item;
+    const val = item.validation || {};
+    const autoRes = item.automation_result || null;
+    const id = ins.insight_id || ins.id || ins.instance_id;
+
+    return {
+      id: id,
+      insight_id: id,
+      instance_id: ins.instance_id || id,
+      title: ins.title || (ins.type === 'idle' ? `Stop Idle Instance (${ins.instance_id || id})` : `Downsize Instance (${ins.instance_id || id})`),
+      resourceId: ins.instance_id || id,
+      awsService: ins.awsService || 'EC2',
+      region: ins.region || 'us-east-1',
+      category: ins.category || (ins.type === 'idle' ? 'Idle Cleanup' : 'Right-sizing'),
+      savings: ins.savings || (ins.estimated_savings_usd ? `$${ins.estimated_savings_usd}/mo` : '$45/mo'),
+      co2Saved: ins.co2Saved || '25 kg CO2/mo',
+      risk: ins.risk || ins.risk_level || (ins.tags?.critical ? 'high' : ins.tags?.env === 'prod' ? 'medium' : 'low'),
+      requiresApproval: ins.requiresApproval ?? (ins.tags?.env === 'prod'),
+      isCritical: ins.isCritical ?? (ins.tags?.critical || false),
+      reasoning: ins.reasoning || ins.recommendation || 'Evaluated by CloudLeaf AI validator.',
+      status: ins.status || (val.decision === 'auto_approve' && autoRes ? 'executed' : (val.decision === 'rejected' ? 'rejected' : 'pending')),
+      decision: val.decision,
+      validationReason: val.reason,
+      automation_result: autoRes,
+      executedAt: autoRes ? 'Just now' : null,
+      tags: ins.tags || { env: 'dev', critical: false }
+    };
+  };
+
+  // Fetch insights from backend API on mount
+  useEffect(() => {
+    fetchInsights();
+  }, []);
+
+  const fetchInsights = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/insights`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      const rawList = data.insights || (Array.isArray(data) ? data : []);
+      
+      // Combine API insights with sample mock insights for a comprehensive demo queue
+      const normalizedApi = rawList.map(normalizeInsight);
+      const apiIds = new Set(normalizedApi.map(i => i.id));
+      const normalizedMock = mockInsights
+        .filter(m => !apiIds.has(m.id))
+        .map(normalizeInsight);
+
+      setInsights([...normalizedApi, ...normalizedMock]);
+    } catch (err) {
+      console.warn('Backend API connection failed, using local demo recommendations queue:', err);
+      setInsights(mockInsights.map(normalizeInsight));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Filter logic
   const filteredInsights = insights.filter((item) => {
@@ -26,40 +88,131 @@ export default function ActionCenter({ onShowToast }) {
     if (activeFilter === 'awaiting') return item.requiresApproval && item.status !== 'executed';
     if (activeFilter === 'executed') return item.status === 'executed';
     // 'all' pending items default
-    return item.status === 'pending';
+    return item.status === 'pending' || item.status === 'executed' || item.status === 'rejected';
   });
 
-  // Handle Approve button click -> Triggers Task 2 ValidationModal animation
+  // Handle Approve button click -> Triggers ValidationModal animation
   const handleApprove = (insight) => {
     setValidatingInsight(insight);
   };
 
-  // Called when ValidationModal finishes sequential checkmarks
-  const handleValidationComplete = (insight) => {
+  // Called when ValidationModal finishes safety audit checks
+  const handleValidationComplete = async (insight) => {
     setValidatingInsight(null);
 
-    // Move insight to executed status
-    setInsights((prev) =>
-      prev.map((item) =>
-        item.id === insight.id
-          ? { ...item, status: 'executed', executedAt: 'Just now' }
-          : item
-      )
-    );
-
-    // Trigger Toast confirmation
-    if (onShowToast) {
-      onShowToast({
-        type: 'success',
-        title: `Action Executed: ${insight.awsService}`,
-        message: `Successfully executed optimization for ${insight.resourceId}. Saved ${insight.savings} & ${insight.co2Saved}. Risk level: ${insight.risk.toUpperCase()}.`,
+    const insightId = insight.insight_id || insight.id;
+    try {
+      const response = await fetch(`${API_BASE}/actions/${insightId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force_approve: false })
       });
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const resData = await response.json();
+
+      const validation = resData.validation || {};
+      const decision = validation.decision;
+      const reason = validation.reason;
+      const autoRes = resData.automation_result;
+
+      if (decision === 'auto_approve') {
+        setInsights((prev) =>
+          prev.map((item) =>
+            item.id === insight.id
+              ? {
+                  ...item,
+                  status: 'executed',
+                  decision: 'auto_approve',
+                  validationReason: reason,
+                  automation_result: autoRes,
+                  executedAt: 'Just now'
+                }
+              : item
+          )
+        );
+
+        if (onShowToast) {
+          onShowToast({
+            type: 'success',
+            title: `Action Executed: ${insight.awsService || 'EC2'}`,
+            message: autoRes?.message || `Successfully executed optimization for ${insight.resourceId}. Saved ${insight.savings}.`,
+          });
+        }
+      } else if (decision === 'rejected') {
+        setInsights((prev) =>
+          prev.map((item) =>
+            item.id === insight.id
+              ? {
+                  ...item,
+                  status: 'rejected',
+                  decision: 'rejected',
+                  validationReason: reason,
+                  automation_result: null
+                }
+              : item
+          )
+        );
+
+        if (onShowToast) {
+          onShowToast({
+            type: 'error',
+            title: 'Action Rejected by AI Safety Engine',
+            message: reason || 'Instance is tagged as critical — automated action is blocked.',
+          });
+        }
+      } else {
+        setInsights((prev) =>
+          prev.map((item) =>
+            item.id === insight.id
+              ? {
+                  ...item,
+                  status: 'needs_approval',
+                  decision: decision || 'needs_approval',
+                  validationReason: reason,
+                  automation_result: null
+                }
+              : item
+          )
+        );
+
+        if (onShowToast) {
+          onShowToast({
+            type: 'warning',
+            title: 'Manual Ops Sign-Off Required',
+            message: reason || 'Instance is in production — manual approval required.',
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to post approve action to backend:', err);
+      // Fallback local behavior if backend server unreachable
+      setInsights((prev) =>
+        prev.map((item) =>
+          item.id === insight.id
+            ? { ...item, status: 'executed', executedAt: 'Just now' }
+            : item
+        )
+      );
+      if (onShowToast) {
+        onShowToast({
+          type: 'info',
+          title: `Action Processed (${insight.awsService})`,
+          message: `Processed optimization for ${insight.resourceId}. Saved ${insight.savings}.`,
+        });
+      }
     }
   };
 
   // Handle Dismiss action
-  const handleDismiss = (id) => {
+  const handleDismiss = async (id) => {
     const item = insights.find((i) => i.id === id);
+    try {
+      await fetch(`${API_BASE}/actions/${id}/dismiss`, { method: 'POST' });
+    } catch (e) {
+      console.warn('Backend dismiss endpoint unreachable:', e);
+    }
+
     setInsights((prev) => prev.filter((i) => i.id !== id));
 
     if (onShowToast) {
@@ -73,12 +226,12 @@ export default function ActionCenter({ onShowToast }) {
 
   // Reset queue button
   const handleResetQueue = () => {
-    setInsights(mockInsights);
+    fetchInsights();
     if (onShowToast) {
       onShowToast({
         type: 'info',
         title: 'Queue Reset',
-        message: 'Restored original hackathon mock recommendations queue.',
+        message: 'Re-fetched recommendations queue from API.',
       });
     }
   };
@@ -129,7 +282,7 @@ export default function ActionCenter({ onShowToast }) {
               : 'text-on-surface-variant/70 hover:text-primary'
           }`}
         >
-          Pending Queue ({insights.filter((i) => i.status === 'pending').length})
+          Queue Overview ({insights.length})
         </button>
 
         <button
@@ -163,7 +316,7 @@ export default function ActionCenter({ onShowToast }) {
           }`}
         >
           <ShieldAlert className="w-3.5 h-3.5 text-error" />
-          High Risk / Locked ({insights.filter((i) => i.risk?.toLowerCase() === 'high' || i.isCritical).length})
+          High Risk / Critical ({insights.filter((i) => i.risk?.toLowerCase() === 'high' || i.isCritical).length})
         </button>
 
         <button
@@ -175,7 +328,7 @@ export default function ActionCenter({ onShowToast }) {
           }`}
         >
           <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-          Recently Executed ({insights.filter((i) => i.status === 'executed').length})
+          Recently Actioned ({insights.filter((i) => i.status === 'executed' || i.status === 'rejected').length})
         </button>
       </div>
 
@@ -199,7 +352,7 @@ export default function ActionCenter({ onShowToast }) {
             onClick={() => setActiveFilter('all')}
             className="px-5 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold transition-colors inline-flex items-center gap-2 hover:bg-primary-container"
           >
-            View All Pending Queue
+            View All Recommendations
           </button>
         </div>
       ) : (

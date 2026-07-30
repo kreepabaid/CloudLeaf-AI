@@ -44,7 +44,7 @@ def validate_insight(insight: dict[str, Any]) -> dict[str, str]:
     cpu_avg = metric_summary.get("cpu_avg", 0)
 
     # Rule 1 — Critical workloads are never auto-actioned
-    if tags.get("critical", False):
+    if tags.get("critical", False) or insight.get("isCritical", False):
         return _decision(
             DECISION_REJECTED,
             "Instance is tagged as critical — automated action is blocked."
@@ -61,8 +61,7 @@ def validate_insight(insight: dict[str, Any]) -> dict[str, str]:
     if cpu_avg > 70:
         return _decision(
             DECISION_REJECTED,
-            f"Average CPU ({cpu_avg}%) is above the 70% threshold — "
-            "instance is actively used."
+            f"Average CPU ({cpu_avg}%) is above the 70% threshold — instance is actively used."
         )
 
     # Rule 4 — Safe to proceed automatically
@@ -70,6 +69,11 @@ def validate_insight(insight: dict[str, Any]) -> dict[str, str]:
         DECISION_AUTO_APPROVE,
         "Insight passes all safety checks — auto-approved."
     )
+
+
+def validate_action(insight: dict[str, Any]) -> dict[str, str]:
+    """Alias for validate_insight to validate actions on insights."""
+    return validate_insight(insight)
 
 
 # ---------------------------------------------------------------------------
