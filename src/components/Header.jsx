@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { Leaf, Bell, LayoutDashboard, Zap, FileText, Settings, User } from 'lucide-react';
+import { Leaf, Bell, LayoutDashboard, Zap, FileText, Settings } from 'lucide-react';
 import NotificationPanel from './NotificationPanel';
 
 export default function Header({ notifications, onMarkAllRead, onMarkRead }) {
@@ -70,7 +70,9 @@ export default function Header({ notifications, onMarkAllRead, onMarkRead }) {
             >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-secondary border-2 border-white animate-pulse" />
+                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-secondary text-[10px] font-extrabold text-white flex items-center justify-center border border-white shadow-xs">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
               )}
             </button>
 
@@ -104,5 +106,4 @@ export default function Header({ notifications, onMarkAllRead, onMarkRead }) {
       </div>
     </header>
   );
-
 }

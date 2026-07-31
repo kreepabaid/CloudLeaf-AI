@@ -14,6 +14,7 @@ import {
   Copy
 } from 'lucide-react';
 import ShimmerSkeleton from '../components/ShimmerSkeleton';
+import ErrorState from '../components/ErrorState';
 
 // Note: accountName is kept as a simple hardcoded string because human-readable AWS Account Alias is not exposed via standard STS identity API
 const DEFAULT_ACCOUNT_NAME = 'Acme Production AWS';
@@ -43,33 +44,33 @@ export default function Settings({ onShowToast }) {
 
   const [copiedRole, setCopiedRole] = useState(false);
 
-  useEffect(() => {
-    async function fetchAccount() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const res = await fetch('http://127.0.0.1:8000/api/account');
-        if (!res.ok) {
-          throw new Error('Could not fetch account details');
-        }
-        const data = await res.json();
-        setAccountDetails({
-          accountName: DEFAULT_ACCOUNT_NAME,
-          accountId: data.accountId || '849201938210',
-          iamRoleArn: data.iamRoleArn || 'arn:aws:iam::849201938210:role/CloudLeafAuditRole',
-          status: data.status || 'Connected',
-          regionsMonitored: data.regionsMonitored || ['us-east-1'],
-          collectorVersion: data.collectorVersion || 'v1.4.2-enterprise',
-        });
-        setAccountStatus(data.status || 'Connected');
-      } catch (err) {
-        console.error('Error fetching account details:', err);
-        setError('Could not connect to backend');
-      } finally {
-        setIsLoading(false);
+  const fetchAccount = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/account');
+      if (!res.ok) {
+        throw new Error('Could not fetch account details');
       }
+      const data = await res.json();
+      setAccountDetails({
+        accountName: DEFAULT_ACCOUNT_NAME,
+        accountId: data.accountId || '849201938210',
+        iamRoleArn: data.iamRoleArn || 'arn:aws:iam::849201938210:role/CloudLeafAuditRole',
+        status: data.status || 'Connected',
+        regionsMonitored: data.regionsMonitored || ['us-east-1'],
+        collectorVersion: data.collectorVersion || 'v1.4.2-enterprise',
+      });
+      setAccountStatus(data.status || 'Connected');
+    } catch (err) {
+      console.error('Error fetching account details:', err);
+      setError('Could not connect to backend');
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchAccount();
   }, []);
 
@@ -135,10 +136,7 @@ export default function Settings({ onShowToast }) {
 
       {/* Loading / Error banner */}
       {error ? (
-        <div className="p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm font-semibold flex items-center justify-between">
-          <span>Could not connect to backend</span>
-          <span className="text-xs text-error/80 font-normal">Check backend server at http://127.0.0.1:8000</span>
-        </div>
+        <ErrorState onRetry={fetchAccount} />
       ) : isLoading ? (
         <div className="space-y-3">
           <div className="text-xs font-semibold text-primary animate-pulse flex items-center gap-2">

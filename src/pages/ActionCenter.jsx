@@ -11,12 +11,20 @@ import {
 import InsightCard from '../components/InsightCard';
 import ValidationModal from '../components/ValidationModal';
 import ShimmerSkeleton from '../components/ShimmerSkeleton';
+import ErrorState from '../components/ErrorState';
+import EmptyState from '../components/EmptyState';
 
 function mapApiInsightToCard(apiItem) {
   const ins = apiItem.insight || apiItem;
   const val = apiItem.validation || {};
   const isNeedsApprove = val.decision === 'needs_approval';
-  const isHighRisk = ins.tags?.critical === true || ins.risk === 'high';
+  const isHighRisk = ins.tags?.critical === true || ins.risk === 'high' || val.decision === 'rejected';
+
+  const isExecuted =
+    apiItem.automation_result?.status === 'success' ||
+    apiItem.automation_result?.success === true ||
+    ins.status === 'executed' ||
+    apiItem.status === 'executed';
 
   return {
     id: ins.id || ins.instance_id,
@@ -32,7 +40,7 @@ function mapApiInsightToCard(apiItem) {
     requiresApproval: isNeedsApprove,
     isCritical: isHighRisk,
     reasoning: val.reason || ins.reasoning || `CloudWatch metrics show CPU avg of ${ins.cpu_avg_7d}%. Recommending ${ins.recommendation}.`,
-    status: apiItem.automation_result?.status === 'success' ? 'executed' : (ins.status || 'pending'),
+    status: isExecuted ? 'executed' : (ins.status || 'pending'),
     createdAt: ins.createdAt || 'Just now',
   };
 }
@@ -69,15 +77,19 @@ export default function ActionCenter({ onShowToast }) {
     fetchInsights();
   }, []);
 
-  // Filter logic
-  const filteredInsights = insights.filter((item) => {
-    if (activeFilter === 'high_risk') return item.risk?.toLowerCase() === 'high' || item.isCritical;
-    if (activeFilter === 'auto_approved') return !item.requiresApproval && item.status !== 'executed';
-    if (activeFilter === 'awaiting') return item.requiresApproval && item.status !== 'executed';
-    if (activeFilter === 'executed') return item.status === 'executed';
-    // 'all' pending items default
-    return item.status === 'pending';
-  });
+  // Compute filter lists consistently
+  const pendingItems = insights.filter((i) => i.status === 'pending');
+  const autoApprovedItems = insights.filter((i) => !i.requiresApproval && i.status !== 'executed');
+  const awaitingItems = insights.filter((i) => i.requiresApproval && i.status !== 'executed');
+  const highRiskItems = insights.filter((i) => i.risk?.toLowerCase() === 'high' || i.isCritical);
+  const executedItems = insights.filter((i) => i.status === 'executed');
+
+  const filteredInsights = 
+    activeFilter === 'high_risk' ? highRiskItems :
+    activeFilter === 'auto_approved' ? autoApprovedItems :
+    activeFilter === 'awaiting' ? awaitingItems :
+    activeFilter === 'executed' ? executedItems :
+    pendingItems;
 
   // Handle Approve button click
   const handleApprove = async (insight) => {
@@ -94,8 +106,12 @@ export default function ActionCenter({ onShowToast }) {
         throw new Error(`Failed to approve action for ${insight.id}`);
       }
 
-      // Remove insight from displayed list on success
-      setInsights((prev) => prev.filter((item) => item.id !== insight.id));
+      // Mark item status as executed on success
+      setInsights((prev) =>
+        prev.map((item) =>
+          item.id === insight.id ? { ...item, status: 'executed' } : item
+        )
+      );
 
       if (onShowToast) {
         onShowToast({
@@ -201,14 +217,6 @@ export default function ActionCenter({ onShowToast }) {
         </div>
       )}
 
-      {/* Main fetch error banner */}
-      {error && (
-        <div className="p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm font-semibold flex items-center justify-between">
-          <span>Could not connect to backend</span>
-          <span className="text-xs text-error/80 font-normal">Check FastAPI server at http://127.0.0.1:8000</span>
-        </div>
-      )}
-
       {/* Filter Tabs Header Bar */}
       <div className="flex items-center gap-2 bg-surface-container-low/60 p-1.5 rounded-2xl border border-outline-variant/15 overflow-x-auto">
         <span className="text-xs font-bold text-on-surface-variant/70 px-3 flex items-center gap-1.5 shrink-0">
@@ -223,7 +231,7 @@ export default function ActionCenter({ onShowToast }) {
               : 'text-on-surface-variant/70 hover:text-primary'
           }`}
         >
-          Pending Queue ({insights.filter((i) => i.status === 'pending').length})
+          Pending Queue ({pendingItems.length})
         </button>
 
         <button
@@ -234,7 +242,7 @@ export default function ActionCenter({ onShowToast }) {
               : 'text-on-surface-variant/70 hover:text-primary'
           }`}
         >
-          ⚡ Auto-Approved ({insights.filter((i) => !i.requiresApproval && i.status !== 'executed').length})
+          ⚡ Auto-Approved ({autoApprovedItems.length})
         </button>
 
         <button
@@ -245,7 +253,7 @@ export default function ActionCenter({ onShowToast }) {
               : 'text-on-surface-variant/70 hover:text-primary'
           }`}
         >
-          Awaiting Approval ({insights.filter((i) => i.requiresApproval && i.status !== 'executed').length})
+          Awaiting Approval ({awaitingItems.length})
         </button>
 
         <button
@@ -257,7 +265,7 @@ export default function ActionCenter({ onShowToast }) {
           }`}
         >
           <ShieldAlert className="w-3.5 h-3.5 text-error" />
-          High Risk / Locked ({insights.filter((i) => i.risk?.toLowerCase() === 'high' || i.isCritical).length})
+          High Risk / Locked ({highRiskItems.length})
         </button>
 
         <button
@@ -269,16 +277,18 @@ export default function ActionCenter({ onShowToast }) {
           }`}
         >
           <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-          Recently Executed ({insights.filter((i) => i.status === 'executed').length})
+          Recently Executed ({executedItems.length})
         </button>
       </div>
 
-      {/* Insights List / Loading / Empty State */}
-      {isLoading ? (
+      {/* Main Content Area */}
+      {error ? (
+        <ErrorState onRetry={fetchInsights} />
+      ) : isLoading ? (
         <div className="space-y-4">
           <div className="text-xs font-semibold text-primary animate-pulse flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
-            Loading...
+            Loading recommendations...
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ShimmerSkeleton />
@@ -286,22 +296,12 @@ export default function ActionCenter({ onShowToast }) {
           </div>
         </div>
       ) : filteredInsights.length === 0 ? (
-        /* Empty State */
-        <div className="glass-card p-12 rounded-2xl text-center border border-outline-variant/15 my-8">
-          <div className="p-4 rounded-full bg-surface-container border border-outline-variant/15 w-16 h-16 mx-auto mb-4 flex items-center justify-center text-primary">
-            <Inbox className="w-8 h-8 text-primary" />
-          </div>
-          <h3 className="text-lg font-bold text-on-surface mb-1">Queue Empty for Selected Filter</h3>
-          <p className="text-xs text-on-surface-variant/80 max-w-md mx-auto mb-6">
-            There are currently no items matching "{activeFilter}". All recommendations in this view have either been executed, dismissed, or cleared.
-          </p>
-          <button
-            onClick={() => setActiveFilter('all')}
-            className="px-5 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold transition-colors inline-flex items-center gap-2 hover:bg-primary-container"
-          >
-            View All Pending Queue
-          </button>
-        </div>
+        <EmptyState
+          title={`Queue empty for "${activeFilter}"`}
+          message={`There are currently no optimization recommendations matching the "${activeFilter}" filter queue.`}
+          actionText="View All Pending Queue"
+          onAction={() => setActiveFilter('all')}
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredInsights.map((insight) => (

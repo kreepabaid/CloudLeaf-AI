@@ -5,6 +5,8 @@ Aggregates live current optimization stats and historical trends for Reports and
 """
 
 from collections import Counter
+from datetime import datetime
+from typing import Any
 from fastapi import APIRouter
 from backend.carbon import (
     INSTANCE_POWER_WATTS,
@@ -18,6 +20,65 @@ from backend.routes.metrics import get_metrics
 from backend.storage import get_history
 
 router = APIRouter()
+
+
+def aggregate_monthly_trends(raw_history: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Group raw history snapshots by calendar month (e.g. 'Feb 2026') and aggregate monthly totals."""
+    month_map: dict[str, dict[str, Any]] = {}
+    month_order: list[str] = []
+
+    for entry in raw_history:
+        period = entry.get("period")
+        date_str = entry.get("date") or entry.get("timestamp")
+
+        if period and isinstance(period, str) and len(period.strip()) > 0:
+            period_key = period.strip()
+        elif date_str:
+            try:
+                dt_part = str(date_str)[:10]
+                dt = datetime.strptime(dt_part, "%Y-%m-%d")
+                period_key = dt.strftime("%b %Y")
+            except Exception:
+                period_key = "Jul 2026"
+        else:
+            period_key = "Jul 2026"
+
+        if period_key not in month_map:
+            month_order.append(period_key)
+            month_map[period_key] = {
+                "period": period_key,
+                "spend": float(entry.get("spend", 1000.0) or 1000.0),
+                "carbon": float(entry.get("carbon", 400.0) or 400.0),
+                "savings": float(entry.get("savings", entry.get("total_savings_usd", 0.0)) or 0.0),
+                "co2Reduced": float(entry.get("co2Reduced", entry.get("total_savings_co2_kg", 0.0)) or 0.0),
+                "is_seed": "period" in entry and bool(entry.get("period")),
+            }
+        else:
+            existing = month_map[period_key]
+            if "period" in entry and entry.get("period"):
+                existing["spend"] = float(entry.get("spend", existing["spend"]))
+                existing["carbon"] = float(entry.get("carbon", existing["carbon"]))
+                existing["savings"] = max(existing["savings"], float(entry.get("savings", 0.0)))
+                existing["co2Reduced"] = max(existing["co2Reduced"], float(entry.get("co2Reduced", 0.0)))
+            else:
+                add_savings = float(entry.get("savings", entry.get("total_savings_usd", 0.0)) or 0.0)
+                add_co2 = float(entry.get("co2Reduced", entry.get("total_savings_co2_kg", 0.0)) or 0.0)
+                if not existing["is_seed"]:
+                    existing["savings"] += add_savings
+                    existing["co2Reduced"] += add_co2
+
+    trends = []
+    for key in month_order:
+        item = month_map[key]
+        trends.append({
+            "period": item["period"],
+            "spend": round(item["spend"], 2),
+            "carbon": round(item["carbon"], 2),
+            "savings": round(item["savings"], 2),
+            "co2Reduced": round(item["co2Reduced"], 2),
+        })
+
+    return trends
 
 
 @router.get("/reports/summary")
@@ -63,19 +124,7 @@ def get_reports_summary():
     }
 
     raw_history = get_history()
-    historical_trends = []
-    for entry in raw_history:
-        period = entry.get("period")
-        if not period and "date" in entry:
-            period = entry["date"]
-
-        historical_trends.append({
-            "period": period or "Unknown",
-            "spend": entry.get("spend", 1000.0),
-            "carbon": entry.get("carbon", 400.0),
-            "savings": entry.get("savings", entry.get("total_savings_usd", 0.0)),
-            "co2Reduced": entry.get("co2Reduced", entry.get("total_savings_co2_kg", 0.0)),
-        })
+    historical_trends = aggregate_monthly_trends(raw_history)
 
     # Carbon breakdown calculations based on active metrics
     total_metrics_count = len(metrics_list)

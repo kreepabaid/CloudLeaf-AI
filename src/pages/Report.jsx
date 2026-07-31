@@ -15,8 +15,9 @@ import {
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import ShimmerSkeleton from '../components/ShimmerSkeleton';
+import ErrorState from '../components/ErrorState';
+import EmptyState from '../components/EmptyState';
 
-// TODO: replace with real per-instance carbon breakdown once backend supports detailed per-instance breakdowns
 const defaultCarbonFormula = {
   powerConsumptionKw: 2.85,
   runningHours: 720,
@@ -39,33 +40,33 @@ export default function Report({ onShowToast }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const [summaryRes, insightsRes] = await Promise.all([
-          fetch('http://127.0.0.1:8000/api/reports/summary'),
-          fetch('http://127.0.0.1:8000/api/insights'),
-        ]);
+  const fetchData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [summaryRes, insightsRes] = await Promise.all([
+        fetch('http://127.0.0.1:8000/api/reports/summary'),
+        fetch('http://127.0.0.1:8000/api/insights'),
+      ]);
 
-        if (!summaryRes.ok || !insightsRes.ok) {
-          throw new Error('Could not connect to backend');
-        }
-
-        const summaryData = await summaryRes.json();
-        const insightsData = await insightsRes.json();
-
-        setStats(summaryData.current_stats || {});
-        setInsights(insightsData.insights || []);
-      } catch (err) {
-        console.error('Error fetching report data:', err);
-        setError('Could not connect to backend');
-      } finally {
-        setIsLoading(false);
+      if (!summaryRes.ok || !insightsRes.ok) {
+        throw new Error('Could not connect to backend');
       }
-    }
 
+      const summaryData = await summaryRes.json();
+      const insightsData = await insightsRes.json();
+
+      setStats(summaryData.current_stats || {});
+      setInsights(insightsData.insights || []);
+    } catch (err) {
+      console.error('Error fetching report data:', err);
+      setError('Could not connect to backend');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -154,7 +155,7 @@ export default function Report({ onShowToast }) {
     }
   };
 
-  // Share functionality with Web Share API + Clipboard fallback
+  // Share functionality
   const handleShare = async () => {
     const shareData = {
       title: 'CloudLeaf AI Infrastructure Audit Report',
@@ -173,10 +174,9 @@ export default function Report({ onShowToast }) {
           });
         }
       } catch (err) {
-        // User cancelled or error
+        // User cancelled
       }
     } else {
-      // Clipboard fallback
       navigator.clipboard.writeText(window.location.href);
       if (onShowToast) {
         onShowToast({
@@ -206,7 +206,7 @@ export default function Report({ onShowToast }) {
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={handleExportPDF}
-            disabled={isExportingPdf || isLoading}
+            disabled={isExportingPdf || isLoading || !!error}
             className="px-4 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center gap-2 hover:bg-primary-container shadow-sm transition-all disabled:opacity-50"
           >
             {isExportingPdf ? (
@@ -219,7 +219,7 @@ export default function Report({ onShowToast }) {
 
           <button
             onClick={handleExportCSV}
-            disabled={isLoading}
+            disabled={isLoading || !!error}
             className="px-4 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface border border-outline-variant/20 font-semibold text-xs flex items-center gap-2 transition-colors disabled:opacity-50"
           >
             <Printer className="w-4 h-4 text-secondary" />
@@ -236,12 +236,9 @@ export default function Report({ onShowToast }) {
         </div>
       </div>
 
-      {/* Loading / Error banner */}
+      {/* Main Content / Error / Loading */}
       {error ? (
-        <div className="p-4 rounded-xl bg-error/10 border border-error/20 text-error text-sm font-semibold flex items-center justify-between">
-          <span>Could not connect to backend</span>
-          <span className="text-xs text-error/80 font-normal">Check backend server at http://127.0.0.1:8000</span>
-        </div>
+        <ErrorState onRetry={fetchData} />
       ) : isLoading ? (
         <div className="space-y-3">
           <div className="text-xs font-semibold text-primary animate-pulse flex items-center gap-2">
@@ -354,53 +351,57 @@ export default function Report({ onShowToast }) {
               Audited Recommendation Summary ({insights.length} Items)
             </h3>
 
-            <div className="overflow-x-auto rounded-2xl border border-outline-variant/15">
-              <table className="w-full text-left text-xs text-on-surface">
-                <thead className="bg-surface-container text-on-surface-variant font-bold uppercase text-[10px] border-b border-outline-variant/15">
-                  <tr>
-                    <th className="p-3">Resource / Title</th>
-                    <th className="p-3">AWS Service</th>
-                    <th className="p-3">Region</th>
-                    <th className="p-3">Financial Saving</th>
-                    <th className="p-3">CO2 Avoided</th>
-                    <th className="p-3">Risk Level</th>
-                    <th className="p-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/10 bg-white">
-                  {insights.map((item) => {
-                    const ins = item.insight || {};
-                    const title = `${ins.recommendation || 'Optimize'} for ${ins.instance_id || 'Instance'}`;
-                    const savings = `$${ins.estimated_savings_usd || 0}/mo`;
-                    const co2Saved = `${ins.estimated_savings_co2_kg || 0} kg`;
-                    const risk = item.validation?.decision === 'auto_approve' ? 'Low' : 'Medium';
-                    const isExecuted = item.automation_result?.success;
+            {insights.length === 0 ? (
+              <EmptyState title="No recommendations in report" message="No audit recommendation records found for this period." />
+            ) : (
+              <div className="overflow-x-auto rounded-2xl border border-outline-variant/15">
+                <table className="w-full text-left text-xs text-on-surface">
+                  <thead className="bg-surface-container text-on-surface-variant font-bold uppercase text-[10px] border-b border-outline-variant/15">
+                    <tr>
+                      <th className="p-3">Resource / Title</th>
+                      <th className="p-3">AWS Service</th>
+                      <th className="p-3">Region</th>
+                      <th className="p-3">Financial Saving</th>
+                      <th className="p-3">CO2 Avoided</th>
+                      <th className="p-3">Risk Level</th>
+                      <th className="p-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/10 bg-white">
+                    {insights.map((item) => {
+                      const ins = item.insight || {};
+                      const title = `${ins.recommendation || 'Optimize'} for ${ins.instance_id || 'Instance'}`;
+                      const savings = `$${ins.estimated_savings_usd || 0}/mo`;
+                      const co2Saved = `${ins.estimated_savings_co2_kg || 0} kg`;
+                      const risk = item.validation?.decision === 'auto_approve' ? 'Low' : 'Medium';
+                      const isExecuted = item.automation_result?.success;
 
-                    return (
-                      <tr key={ins.id || ins.instance_id} className="hover:bg-surface-container-low transition-colors">
-                        <td className="p-3 font-medium text-on-surface max-w-xs truncate">{title}</td>
-                        <td className="p-3">EC2</td>
-                        <td className="p-3 font-mono">{ins.region || 'us-east-1'}</td>
-                        <td className="p-3 font-semibold text-primary">{savings}</td>
-                        <td className="p-3 font-semibold text-primary">{co2Saved}</td>
-                        <td className="p-3 capitalize">{risk}</td>
-                        <td className="p-3">
-                          {isExecuted ? (
-                            <span className="px-2 py-0.5 rounded bg-primary/10 text-primary font-semibold text-[10px]">
-                              Executed
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded bg-secondary-container/30 text-secondary font-semibold text-[10px]">
-                              Pending
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      return (
+                        <tr key={ins.id || ins.instance_id} className="hover:bg-surface-container-low transition-colors">
+                          <td className="p-3 font-medium text-on-surface max-w-xs truncate">{title}</td>
+                          <td className="p-3">EC2</td>
+                          <td className="p-3 font-mono">{ins.region || 'us-east-1'}</td>
+                          <td className="p-3 font-semibold text-primary">{savings}</td>
+                          <td className="p-3 font-semibold text-primary">{co2Saved}</td>
+                          <td className="p-3 capitalize">{risk}</td>
+                          <td className="p-3">
+                            {isExecuted ? (
+                              <span className="px-2 py-0.5 rounded bg-primary/10 text-primary font-semibold text-[10px]">
+                                Executed
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded bg-secondary-container/30 text-secondary font-semibold text-[10px]">
+                                Pending
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Footer */}

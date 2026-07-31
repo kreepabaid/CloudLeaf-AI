@@ -7,9 +7,7 @@ showing a realistic improving trend if the history file is empty or missing.
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-from backend.storage import DATA_DIR, HISTORY_FILE, get_history
+from backend.storage import append_snapshot, get_history
 
 # 6 synthetic monthly snapshots showing an improving trend (Feb-Jul 2026)
 DEMO_SNAPSHOTS = [
@@ -100,10 +98,12 @@ DEMO_SNAPSHOTS = [
 ]
 
 
+from backend.storage import append_snapshot, get_history
+
+
 def seed_demo_history() -> None:
-    """Populate backend/data/history.json with synthetic monthly snapshots if history is empty."""
+    """Populate database with synthetic monthly snapshots if history is empty."""
     history = get_history()
     if not history:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-            json.dump(DEMO_SNAPSHOTS, f, indent=2)
+        for snap in DEMO_SNAPSHOTS:
+            append_snapshot(snap)
