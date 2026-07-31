@@ -13,44 +13,58 @@ import ValidationModal from '../components/ValidationModal';
 import ShimmerSkeleton from '../components/ShimmerSkeleton';
 import { mockInsights } from '../data/mockData';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = 'http://127.0.0.1:8000/api';
+
+// Reconciled normalizeInsight logic merging sanskriti's field calculations & main's edge-case handling
+const normalizeInsight = (item) => {
+  const ins = item.insight || item;
+  const val = item.validation || {};
+  const autoRes = item.automation_result || null;
+  const id = ins.insight_id || ins.id || ins.instance_id || 'ins-unknown';
+  const isHighRisk = ins.tags?.critical === true || ins.risk === 'high' || ins.isCritical === true;
+  const isNeedsApprove = val.decision === 'needs_approval' || ins.requiresApproval || ins.tags?.env === 'prod';
+
+  // Calculate dynamic savings & co2 saved
+  const savingsUsd = ins.estimated_savings_usd || (ins.savings ? parseFloat(ins.savings.replace(/[^0-9.]/g, '')) : 25);
+  const savingsStr = ins.savings || `$${savingsUsd}/mo`;
+  const co2SavedStr = ins.co2Saved || `${Math.round(savingsUsd * 4.2)} kg CO2/mo`;
+
+  // Dynamic reasoning formatting
+  const formattedReasoning = val.reason || ins.reasoning || (ins.cpu_avg_7d !== undefined
+    ? `CloudWatch metrics show CPU avg of ${ins.cpu_avg_7d}%. Recommending ${ins.recommendation || 'optimization'}.`
+    : 'Evaluated by CloudLeaf AI validator.');
+
+  return {
+    id: id,
+    insight_id: id,
+    instance_id: ins.instance_id || id,
+    title: ins.title || (ins.recommendation ? `${ins.recommendation} (${ins.instance_id || id})` : (ins.type === 'idle' ? `Stop Idle Instance (${ins.instance_id || id})` : `Downsize Instance (${ins.instance_id || id})`)),
+    resourceId: ins.instance_id || ins.resourceId || id,
+    awsService: ins.awsService || 'EC2',
+    region: ins.region || 'us-east-1',
+    category: ins.category || (ins.type === 'idle' ? 'Zombie Cleanup' : ins.type === 'over-provisioned' ? 'Right-sizing' : 'Optimization'),
+    savings: savingsStr,
+    co2Saved: co2SavedStr,
+    impact: ins.impact || (ins.confidence > 80 ? 'High' : 'Medium'),
+    risk: isHighRisk ? 'high' : (ins.risk || 'low'),
+    requiresApproval: isNeedsApprove,
+    isCritical: isHighRisk,
+    reasoning: formattedReasoning,
+    status: ins.status || (autoRes?.status === 'success' || (val.decision === 'auto_approve' && autoRes) ? 'executed' : (val.decision === 'rejected' ? 'rejected' : 'pending')),
+    decision: val.decision,
+    validationReason: val.reason,
+    automation_result: autoRes,
+    executedAt: autoRes ? 'Just now' : (ins.executedAt || null),
+    createdAt: ins.createdAt || 'Just now',
+    tags: ins.tags || { env: 'dev', critical: false }
+  };
+};
 
 export default function ActionCenter({ onShowToast }) {
   const [insights, setInsights] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'high_risk' | 'auto_approved' | 'awaiting' | 'executed'
   const [validatingInsight, setValidatingInsight] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Normalize items returned by GET /api/insights into card format
-  const normalizeInsight = (item) => {
-    const ins = item.insight || item;
-    const val = item.validation || {};
-    const autoRes = item.automation_result || null;
-    const id = ins.insight_id || ins.id || ins.instance_id;
-
-    return {
-      id: id,
-      insight_id: id,
-      instance_id: ins.instance_id || id,
-      title: ins.title || (ins.type === 'idle' ? `Stop Idle Instance (${ins.instance_id || id})` : `Downsize Instance (${ins.instance_id || id})`),
-      resourceId: ins.instance_id || id,
-      awsService: ins.awsService || 'EC2',
-      region: ins.region || 'us-east-1',
-      category: ins.category || (ins.type === 'idle' ? 'Idle Cleanup' : 'Right-sizing'),
-      savings: ins.savings || (ins.estimated_savings_usd ? `$${ins.estimated_savings_usd}/mo` : '$45/mo'),
-      co2Saved: ins.co2Saved || '25 kg CO2/mo',
-      risk: ins.risk || ins.risk_level || (ins.tags?.critical ? 'high' : ins.tags?.env === 'prod' ? 'medium' : 'low'),
-      requiresApproval: ins.requiresApproval ?? (ins.tags?.env === 'prod'),
-      isCritical: ins.isCritical ?? (ins.tags?.critical || false),
-      reasoning: ins.reasoning || ins.recommendation || 'Evaluated by CloudLeaf AI validator.',
-      status: ins.status || (val.decision === 'auto_approve' && autoRes ? 'executed' : (val.decision === 'rejected' ? 'rejected' : 'pending')),
-      decision: val.decision,
-      validationReason: val.reason,
-      automation_result: autoRes,
-      executedAt: autoRes ? 'Just now' : null,
-      tags: ins.tags || { env: 'dev', critical: false }
-    };
-  };
 
   // Fetch insights from backend API on mount
   useEffect(() => {
@@ -111,9 +125,8 @@ export default function ActionCenter({ onShowToast }) {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const resData = await response.json();
 
-      const validation = resData.validation || {};
-      const decision = validation.decision;
-      const reason = validation.reason;
+      const decision = resData.decision;
+      const reason = resData.reason || resData.message;
       const autoRes = resData.automation_result;
 
       if (decision === 'auto_approve') {
@@ -185,7 +198,7 @@ export default function ActionCenter({ onShowToast }) {
         }
       }
     } catch (err) {
-      console.error('Failed to post approve action to backend:', err);
+      console.warn('Backend action endpoint unreachable, applying local execution state:', err);
       // Fallback local behavior if backend server unreachable
       setInsights((prev) =>
         prev.map((item) =>
@@ -224,14 +237,14 @@ export default function ActionCenter({ onShowToast }) {
     }
   };
 
-  // Reset queue button
+  // Reset queue button (refetch from API)
   const handleResetQueue = () => {
     fetchInsights();
     if (onShowToast) {
       onShowToast({
         type: 'info',
-        title: 'Queue Reset',
-        message: 'Re-fetched recommendations queue from API.',
+        title: 'Queue Refreshed',
+        message: 'Refreshed recommendations queue from API.',
       });
     }
   };
@@ -242,7 +255,7 @@ export default function ActionCenter({ onShowToast }) {
       {validatingInsight && (
         <ValidationModal
           insight={validatingInsight}
-          onComplete={handleValidationComplete}
+          onComplete={() => handleValidationComplete(validatingInsight)}
           onCancel={() => setValidatingInsight(null)}
         />
       )}
@@ -264,7 +277,7 @@ export default function ActionCenter({ onShowToast }) {
           className="px-4 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-on-surface-variant border border-outline-variant/20 transition-colors flex items-center gap-2 self-start md:self-auto"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          Reset Demo Queue
+          Refresh Recommendations
         </button>
       </div>
 
@@ -332,11 +345,17 @@ export default function ActionCenter({ onShowToast }) {
         </button>
       </div>
 
-      {/* Insights List / Empty State */}
+      {/* Insights List / Loading / Empty State */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ShimmerSkeleton />
-          <ShimmerSkeleton />
+        <div className="space-y-4">
+          <div className="text-xs font-semibold text-primary animate-pulse flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary animate-ping" />
+            Loading...
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ShimmerSkeleton />
+            <ShimmerSkeleton />
+          </div>
         </div>
       ) : filteredInsights.length === 0 ? (
         /* Empty State */
@@ -363,7 +382,6 @@ export default function ActionCenter({ onShowToast }) {
               insight={insight}
               onApprove={handleApprove}
               onDismiss={handleDismiss}
-              isExecuting={validatingInsight?.id === insight.id}
             />
           ))}
         </div>

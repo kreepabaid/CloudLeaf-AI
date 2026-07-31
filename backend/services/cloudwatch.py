@@ -54,7 +54,7 @@ def list_all_instances() -> list[dict[str, Any]]:
                     "region": region,
                     "tags": tags,
                 })
-    except ClientError as exc:
+    except Exception as exc:
         print(f"Error describing EC2 instances: {exc}")
 
     return instances

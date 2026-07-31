@@ -22,7 +22,7 @@ from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 load_dotenv()
 
-AWS_REGION = os.getenv("AWS_REGION")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 INSTANCE_ID = os.getenv("EC2_INSTANCE_ID")
 
 def _get_ec2_client():
@@ -33,12 +33,10 @@ def _get_ec2_client():
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
 
-ec2 = boto3.client(
-    "ec2",
-    region_name=AWS_REGION,
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-)
+try:
+    ec2 = _get_ec2_client()
+except Exception:
+    ec2 = None
 
 # ---------------------------------------------------------------------------
 # Public API
