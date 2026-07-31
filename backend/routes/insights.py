@@ -15,6 +15,7 @@ from fastapi import APIRouter
 from backend.services.cloudwatch import list_all_instances, get_instance_metrics
 from backend.services.waste_detector import build_insight
 from backend.ai.validator import validate_insight
+from backend.ai.reasoning_engine import generate_reasoning
 from backend.automation.automation import stop_instance, resize_instance
 
 logger = logging.getLogger(__name__)
@@ -58,6 +59,7 @@ def get_insights():
                 insight["tags"] = instance.get("tags", {"env": "dev", "critical": False})
 
             validation = validate_insight(insight)
+            insight["reasoning"] = generate_reasoning(insight)
             decision = validation.get("decision")
             automation_result = None
 
@@ -84,6 +86,7 @@ def get_insights():
                 fixture_insight["tags"] = {"env": "dev", "critical": fixture_insight.get("isCritical", False)}
 
             validation = validate_insight(fixture_insight)
+            fixture_insight["reasoning"] = generate_reasoning(fixture_insight)
             decision = validation.get("decision")
             automation_result = None
 
