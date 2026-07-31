@@ -28,8 +28,9 @@ def build_insight(instance: dict[str, Any], metrics: dict[str, Any]) -> dict[str
         return None
 
     cpu_avg_float = float(cpu_avg)
-    insight_id = str(uuid.uuid4())[:8]
+    import hashlib
     instance_id = instance.get("instance_id", metrics.get("instance_id", ""))
+    insight_id = hashlib.md5(instance_id.encode()).hexdigest()[:8]
     region = instance.get("region", "us-east-1")
     tags = instance.get("tags", {"env": "dev", "critical": False})
 
